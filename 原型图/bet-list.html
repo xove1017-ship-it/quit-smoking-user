@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戒烟赌约 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 顶部导航 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .create-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* 选项卡 */
+        .tab-container {
+            background: var(--white);
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-item.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* 赌约列表 */
+        .bet-list {
+            padding: 16px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .section-count {
+            font-size: 12px;
+            color: var(--text-gray);
+            background: var(--background-light);
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .bet-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .bet-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .bet-card.ongoing {
+            border-left-color: var(--primary-color);
+        }
+
+        .bet-card.ongoing .bet-header {
+            margin-bottom: 16px;
+        }
+
+        .bet-card.ended {
+            border-left-color: var(--text-gray);
+            opacity: 0.8;
+        }
+
+        .bet-card.won {
+            border-left-color: var(--success-green);
+        }
+
+        .bet-card.lost {
+            border-left-color: var(--error-red);
+        }
+
+        /* 进行中赌约增强样式 */
+        .ongoing-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .today-checkin {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkin-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .checkin-btn.checked {
+            background: var(--text-gray);
+        }
+
+        .opponent-checkin {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 时间线 */
+        .timeline {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+
+        .timeline-day {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--background-light);
+        }
+
+        .timeline-day.checked {
+            background: var(--success-green);
+        }
+
+        .timeline-day.smoked {
+            background: var(--error-red);
+        }
+
+        .timeline-day.opponent-checked {
+            background: rgba(39, 174, 96, 0.3);
+        }
+
+        .timeline-day.opponent-smoked {
+            background: rgba(231, 76, 60, 0.3);
+        }
+
+        .bet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .bet-opponent {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .opponent-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 14px;
+        }
+
+        .opponent-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .opponent-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .bet-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: var(--background-light);
+        }
+
+        .status-ongoing {
+            color: var(--accent-orange);
+            background: rgba(243, 156, 18, 0.1);
+        }
+
+        .status-won {
+            color: var(--success-green);
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        .status-lost {
+            color: var(--error-red);
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .bet-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .bet-period {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .bet-stake {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-orange);
+        }
+
+        .progress-section {
+            margin-top: 12px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-bottom: 4px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--background-light);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-gray);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="page-title">戒烟赌约</div>
+        <button class="create-btn" onclick="createBet()">发起赌约</button>
+    </div>
+
+    <!-- 赌约列表 -->
+    <div class="bet-list">
+        <!-- 进行中赌约 -->
+        <div class="section-header">
+            <div class="section-title">🔥 进行中的赌约</div>
+            <div class="section-count">3个</div>
+        </div>
+        
+        <!-- 赌约卡片1 - 多人赌约 -->
+        <div class="bet-card ongoing fade-in" onclick="openBetDetail('三人7天赌约')">
+            <div class="bet-header">
+                <div class="bet-opponent">
+                    <div class="opponent-avatar">3</div>
+                    <div class="opponent-info">
+                        <div class="opponent-name">三人7天赌约</div>
+                        <div class="bet-period">剩余2天</div>
+                    </div>
+                </div>
+                <div class="bet-status status-ongoing">我领先1天</div>
+            </div>
+            
+            <div class="ongoing-details">
+                <div class="today-checkin">
+                    <button class="checkin-btn" onclick="event.stopPropagation(); checkinToday('王强')">今日无烟打卡</button>
+                    <div class="opponent-checkin">对手已打卡</div>
+                </div>
+                <div class="bet-stake">赌注：请吃火锅</div>
+            </div>
+            
+            <div class="timeline">
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+            </div>
+            
+            <div class="progress-section">
+                <div class="progress-info">
+                    <span>我：5天无烟</span>
+                    <span>王强：4天无烟</span>
+                    <span>张伟：3天无烟</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 71%"></div>
+                </div>
+            </div>
+            
+            <div class="witnesses" style="font-size: 12px; color: var(--text-gray); margin-top: 8px;">👥 2位见证人</div>
+        </div>
+
+        <!-- 赌约卡片2 - 进行中 -->
+        <div class="bet-card ongoing fade-in" onclick="openBetDetail('赵敏')">
+            <div class="bet-header">
+                <div class="bet-opponent">
+                    <div class="opponent-avatar">赵</div>
+                    <div class="opponent-info">
+                        <div class="opponent-name">赵敏</div>
+                        <div class="bet-period">15天挑战 · 剩余5天</div>
+                    </div>
+                </div>
+                <div class="bet-status status-ongoing">落后1天</div>
+            </div>
+            
+            <div class="ongoing-details">
+                <div class="today-checkin">
+                    <button class="checkin-btn checked" onclick="event.stopPropagation();">今日已打卡</button>
+                    <div class="opponent-checkin">对手未打卡</div>
+                </div>
+                <div class="bet-stake">赌注：送一盒戒烟糖</div>
+            </div>
+            
+            <div class="timeline">
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+            </div>
+            
+            <div class="progress-section">
+                <div class="progress-info">
+                    <span>我：9天无烟</span>
+                    <span>对手：10天无烟</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 60%"></div>
+                </div>
+            </div>
+            
+            <div class="witnesses" style="font-size: 12px; color: var(--text-gray); margin-top: 8px;">👥 1位见证人</div>
+        </div>
+
+        <!-- 单人挑战 -->
+        <div class="bet-card ongoing fade-in" onclick="openBetDetail('自我挑战')">
+            <div class="bet-header">
+                <div class="bet-opponent">
+                    <div class="opponent-avatar">💪</div>
+                    <div class="opponent-info">
+                        <div class="opponent-name">自我挑战</div>
+                        <div class="bet-period">30天挑战 · 剩余12天</div>
+                    </div>
+                </div>
+                <div class="bet-status status-ongoing">进行中</div>
+            </div>
+            
+            <div class="ongoing-details">
+                <div class="today-checkin">
+                    <button class="checkin-btn checked" onclick="event.stopPropagation();">今日已打卡</button>
+                    <div class="opponent-checkin">单人挑战</div>
+                </div>
+                <div class="bet-stake">奖励：买新游戏</div>
+            </div>
+            
+            <div class="timeline">
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day checked"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+                <div class="timeline-day"></div>
+            </div>
+            
+            <div class="progress-section">
+                <div class="progress-info">
+                    <span>已坚持：18天</span>
+                    <span>成功率：85%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 60%"></div>
+                </div>
+            </div>
+            
+            <div class="witnesses" style="font-size: 12px; color: var(--text-gray); margin-top: 8px;">👥 0位见证人</div>
+        </div>
+
+        <!-- 已结束赌约 -->
+        <div class="section-header" style="margin-top: 32px;">
+            <div class="section-title">📋 历史赌约</div>
+            <div class="section-count">2个</div>
+        </div>
+        
+        <!-- 获胜赌约 -->
+        <div class="bet-card won fade-in">
+            <div class="bet-header">
+                <div class="bet-opponent">
+                    <div class="opponent-avatar">李</div>
+                    <div class="opponent-info">
+                        <div class="opponent-name">李华</div>
+                        <div class="bet-period">7天挑战 · 已结束</div>
+                    </div>
+                </div>
+                <div class="bet-status status-won">获胜</div>
+            </div>
+            <div class="bet-details">
+                <div class="bet-stake">赌注：请看电影</div>
+                <div class="witnesses">👥 2位见证人</div>
+            </div>
+            <div class="progress-section">
+                <div class="progress-info">
+                    <span>我：7天全勤</span>
+                    <span>对手：6天无烟</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 失败赌约 -->
+        <div class="bet-card lost fade-in">
+            <div class="bet-header">
+                <div class="bet-opponent">
+                    <div class="opponent-avatar">张</div>
+                    <div class="opponent-info">
+                        <div class="opponent-name">张伟</div>
+                        <div class="bet-period">15天挑战 · 已结束</div>
+                    </div>
+                </div>
+                <div class="bet-status status-lost">失败</div>
+            </div>
+            <div class="bet-details">
+                <div class="bet-stake">赌注：请吃大餐</div>
+                <div class="witnesses">👥 1位见证人</div>
+            </div>
+            <div class="progress-section">
+                <div class="progress-info">
+                    <span>我：12天无烟</span>
+                    <span>对手：15天全勤</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 80%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 空状态 -->
+        <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-text">暂无更多历史赌约</div>
+            <button class="create-btn" onclick="createBet()">发起新赌约</button>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item active">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 打开赌约详情
+        function openBetDetail(opponentName) {
+            if (opponentName === '自我挑战') {
+                window.location.href = 'bet-detail-solo.html';
+            } else {
+                window.location.href = 'bet-detail.html';
+            }
+        }
+
+        // 今日打卡
+        function checkinToday(opponentName) {
+            const btn = event.target;
+            btn.textContent = '今日已打卡';
+            btn.classList.add('checked');
+            btn.disabled = true;
+            
+            alert(`今日无烟打卡成功！${opponentName}会收到通知`);
+            
+            // 更新对手状态显示
+            const opponentCheckin = btn.closest('.today-checkin').querySelector('.opponent-checkin');
+            opponentCheckin.textContent = '对手已收到通知';
+        }
+
+        // 发起赌约
+        function createBet() {
+            window.location.href = 'bet-type-select.html';
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            if (page !== 'bet-list.html') {
+                window.location.href = page;
+            }
+        }
+
+        // 赌约卡片点击事件
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.bet-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    // 直接跳转到赌约详情页，不显示确认弹框
+                    const opponentName = this.querySelector('.opponent-name').textContent;
+                    const betStatus = this.querySelector('.bet-status').textContent;
+                    
+                    if (betStatus === '获胜') {
+                        window.location.href = 'bet-history-win.html';
+                    } else if (betStatus === '失败') {
+                        window.location.href = 'bet-history-lose.html';
+                    } else if (opponentName === '自我挑战') {
+                        window.location.href = 'bet-detail-solo.html';
+                    } else if (opponentName === '三人7天赌约') {
+                        window.location.href = 'bet-detail.html';
+                    } else {
+                        window.location.href = 'bet-detail.html';
+                    }
+                });
+            });
+
+            // 底部导航交互
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.nav-item').forEach(nav => {
+                        nav.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

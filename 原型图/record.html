@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戒烟记录 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 图表区域 */
+        .chart-section {
+            background: var(--white);
+            margin: 0 16px 16px;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-container {
+            height: 200px;
+            background: var(--background-light);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        /* 健康收益统计 */
+        .health-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .health-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--background-light);
+            border-radius: 8px;
+        }
+
+        .health-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-color);
+            border-radius: 50%;
+            color: var(--white);
+        }
+
+        .health-info {
+            flex: 1;
+        }
+
+        .health-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .health-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 图表样式 */
+        .chart-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .chart-bars {
+            display: flex;
+            align-items: end;
+            gap: 16px;
+            height: 120px;
+            padding: 0 20px;
+        }
+
+        .chart-bar {
+            width: 30px;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .chart-bar:hover {
+            opacity: 0.8;
+            transform: scaleY(1.05);
+        }
+
+        .chart-labels {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .chart-labels div {
+            width: 30px;
+            text-align: center;
+        }
+
+        .chart-summary {
+            display: flex;
+            justify-content: space-around;
+            font-size: 12px;
+            color: var(--text-gray);
+            border-top: 1px solid #eee;
+            padding-top: 12px;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .action-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* 历史记录 */
+        .history-section {
+            background: var(--white);
+            margin: 0 16px 16px;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-date {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .history-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .status-success {
+            background: var(--success-green);
+            color: var(--white);
+        }
+
+        .status-failure {
+            background: var(--error-red);
+            color: var(--white);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="page-title">戒烟记录</div>
+        <div class="page-subtitle">📊 查看您的戒烟历程和统计数据</div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-grid">
+        <div class="stat-card fade-in">
+            <div class="stat-value">15</div>
+            <div class="stat-label">连续无烟天数</div>
+            <div class="stat-trend" style="font-size: 12px; color: var(--text-gray);">历史最长天数45天</div>
+        </div>
+        <div class="stat-card fade-in">
+            <div class="stat-value">¥450</div>
+            <div class="stat-label">累计节省金额</div>
+            <div class="stat-trend" style="font-size: 12px; color: var(--success-green);">↑ 较上周+¥60</div>
+        </div>
+        <div class="stat-card fade-in">
+            <div class="stat-value">98%</div>
+            <div class="stat-label">30天成功率</div>
+            <div class="stat-trend" style="font-size: 12px; color: var(--success-green);">↑ 较上周+3%</div>
+        </div>
+        <div class="stat-card fade-in">
+            <div class="stat-value">2</div>
+            <div class="stat-label">失败次数</div>
+            <div class="stat-trend" style="font-size: 12px; color: var(--error-red);">↑ 较上周+1次</div>
+        </div>
+    </div>
+
+    <!-- 健康收益统计 -->
+    <div class="chart-section fade-in">
+        <div class="section-title">
+            <span>💚 健康收益</span>
+            <span style="font-size: 12px; color: var(--text-gray);">戒烟15天的成果</span>
+        </div>
+        <div class="health-stats">
+            <div class="health-item">
+                <div class="health-icon">🫁</div>
+                <div class="health-info">
+                    <div class="health-value">肺功能提升 15%</div>
+                    <div class="health-desc">呼吸更顺畅</div>
+                </div>
+            </div>
+            <div class="health-item">
+                <div class="health-icon">❤️</div>
+                <div class="health-info">
+                    <div class="health-value">心血管风险降低 25%</div>
+                    <div class="health-desc">心脏更健康</div>
+                </div>
+            </div>
+            <div class="health-item">
+                <div class="health-icon">🧠</div>
+                <div class="health-info">
+                    <div class="health-value">精力提升 30%</div>
+                    <div class="health-desc">精神状态更好</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="chart-section fade-in">
+        <div class="section-title">
+            <span>📈 戒烟趋势</span>
+            <div style="display: flex; gap: 8px;">
+                <select id="chartPeriod" onchange="updateChart()">
+                    <option value="7">最近7天</option>
+                    <option value="30" selected>最近30天</option>
+                    <option value="90">最近90天</option>
+                </select>
+            </div>
+        </div>
+        <div class="chart-container">
+            <div class="chart-visual">
+                <div class="chart-bars">
+                    <div class="chart-bar" style="height: 80%; background: var(--primary-color);" title="第1周: 80%成功率"></div>
+                    <div class="chart-bar" style="height: 65%; background: var(--primary-color);" title="第2周: 65%成功率"></div>
+                    <div class="chart-bar" style="height: 90%; background: var(--primary-color);" title="第3周: 90%成功率"></div>
+                    <div class="chart-bar" style="height: 95%; background: var(--primary-color);" title="第4周: 95%成功率"></div>
+                </div>
+                <div class="chart-labels">
+                    <div>第1周</div>
+                    <div>第2周</div>
+                    <div>第3周</div>
+                    <div>第4周</div>
+                </div>
+            </div>
+            <div class="chart-summary">
+                <div class="summary-item">
+                    <span>平均成功率:</span>
+                    <span style="color: var(--primary-color); font-weight: 600;">82.5%</span>
+                </div>
+                <div class="summary-item">
+                    <span>最佳表现:</span>
+                    <span style="color: var(--success-green); font-weight: 600;">第4周 95%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录 -->
+    <div class="history-section fade-in">
+        <div class="section-title">
+            <span>📝 打卡历史</span>
+            <span style="font-size: 12px; color: var(--text-gray);">最近30条</span>
+        </div>
+        <div class="history-list">
+            <div class="history-item">
+                <div class="history-date">2024-03-29 08:30</div>
+                <div class="history-status status-success">成功</div>
+            </div>
+            <div class="history-item">
+                <div class="history-date">2024-03-28 09:15</div>
+                <div class="history-status status-success">成功</div>
+            </div>
+            <div class="history-item">
+                <div class="history-date">2024-03-27 10:00</div>
+                <div class="history-status status-success">成功</div>
+            </div>
+            <div class="history-item">
+                <div class="history-date">2024-03-26 14:20</div>
+                <div class="history-status status-failure">失败</div>
+            </div>
+            <div class="history-item">
+                <div class="history-date">2024-03-25 08:45</div>
+                <div class="history-status status-success">成功</div>
+            </div>
+            <div class="history-item">
+                <div class="history-date">2024-03-24 09:30</div>
+                <div class="history-status status-success">成功</div>
+            </div>
+            <div class="history-item">
+                <div class="history-date">2024-03-23 11:00</div>
+                <div class="history-status status-success">成功</div>
+            </div>
+            <div class="history-item">
+                <div class="history-date">2024-03-22 16:45</div>
+                <div class="history-status status-failure">失败</div>
+            </div>
+            <div class="history-item">
+                <div class="history-date">2024-03-21 08:20</div>
+                <div class="history-status status-success">成功</div>
+            </div>
+            <div class="history-item">
+                <div class="history-date">2024-03-20 09:10</div>
+                <div class="history-status status-success">成功</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item active">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 更新图表
+        function updateChart() {
+            const period = document.getElementById('chartPeriod').value;
+            const chartBars = document.querySelector('.chart-bars');
+            const chartLabels = document.querySelector('.chart-labels');
+            
+            // 模拟不同时间段的数据
+            let data = [];
+            let labels = [];
+            
+            if (period === '7') {
+                data = [85, 90, 95, 88, 92, 96, 98];
+                labels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            } else if (period === '30') {
+                data = [80, 65, 90, 95];
+                labels = ['第1周', '第2周', '第3周', '第4周'];
+            } else {
+                data = [70, 75, 80, 85, 90, 95];
+                labels = ['第1月', '第2月', '第3月', '第4月', '第5月', '第6月'];
+            }
+            
+            // 更新图表
+            chartBars.innerHTML = '';
+            chartLabels.innerHTML = '';
+            
+            data.forEach((value, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.height = `${value}%`;
+                bar.style.background = value >= 90 ? 'var(--success-green)' : 
+                                      value >= 80 ? 'var(--primary-color)' : 'var(--accent-orange)';
+                bar.title = `${labels[index]}: ${value}%成功率`;
+                bar.onclick = () => showWeekDetail(index + 1);
+                chartBars.appendChild(bar);
+                
+                const label = document.createElement('div');
+                label.textContent = labels[index];
+                chartLabels.appendChild(label);
+            });
+            
+            // 更新统计摘要
+            const avg = (data.reduce((a, b) => a + b, 0) / data.length).toFixed(1);
+            const max = Math.max(...data);
+            const maxIndex = data.indexOf(max);
+            
+            document.querySelector('.chart-summary').innerHTML = `
+                <div class="summary-item">
+                    <span>平均成功率:</span>
+                    <span style="color: var(--primary-color); font-weight: 600;">${avg}%</span>
+                </div>
+                <div class="summary-item">
+                    <span>最佳表现:</span>
+                    <span style="color: var(--success-green); font-weight: 600;">${labels[maxIndex]} ${max}%</span>
+                </div>
+            `;
+        }
+
+        // 显示周详情
+        function showWeekDetail(week) {
+            alert(`查看第${week}周的详细数据\n成功率: ${[80, 65, 90, 95][week-1]}%\n打卡次数: 7次\n失败次数: ${week === 2 ? 2 : week === 1 ? 1 : 0}次`);
+        }
+
+        // 导出数据
+        function exportData() {
+            const data = {
+                连续无烟天数: 15,
+                累计节省金额: '¥450',
+                七日成功率: '98%',
+                失败次数: 2,
+                健康收益: {
+                    肺功能提升: '15%',
+                    心血管风险降低: '25%',
+                    精力提升: '30%'
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '戒烟记录数据.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('数据已导出为JSON文件');
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            if (page !== 'record.html') {
+                window.location.href = page;
+            }
+        }
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.2}s`;
+            });
+            
+            // 初始化图表
+            updateChart();
+        });
+    </script>
+</body>
+</html>

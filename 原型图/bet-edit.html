@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑赌约 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--text-gray);
+        }
+
+        .save-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* 编辑表单 */
+        .edit-form {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-gray);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: var(--white);
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .agreement-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .agreement-option {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .agreement-option:hover {
+            border-color: var(--primary-color);
+        }
+
+        .agreement-option.selected {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 300px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn.cancel {
+            background: var(--background-light);
+            color: var(--text-gray);
+        }
+
+        .modal-btn.confirm {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        /* 动画效果 */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <button class="back-btn" onclick="goBack()">← 返回</button>
+        <div class="page-title">编辑赌约</div>
+        <button class="save-btn" onclick="saveChanges()">保存</button>
+    </div>
+
+    <!-- 编辑表单 -->
+    <div class="edit-form">
+        <!-- 挑战周期 -->
+        <div class="form-section">
+            <div class="section-title">📅 挑战周期</div>
+            <div class="form-group">
+                <label class="form-label">周期天数</label>
+                <select class="form-select" id="periodSelect">
+                    <option value="7">7天</option>
+                    <option value="14">14天</option>
+                    <option value="21">21天</option>
+                    <option value="30">30天</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 口头约定 -->
+        <div class="form-section">
+            <div class="section-title">🤝 约定</div>
+            <div class="form-group">
+                <label class="form-label">约定内容</label>
+                <input type="text" class="form-input" id="agreementInput" placeholder="例如：输的人请赢的人吃饭">
+                <div class="agreement-options">
+                    <div class="agreement-option" onclick="selectAgreement('输的人请赢的人吃饭')">请吃饭</div>
+                    <div class="agreement-option" onclick="selectAgreement('输的人帮赢的人做一件事')">帮做事</div>
+                    <div class="agreement-option" onclick="selectAgreement('输的人公开承认戒烟成功')">公开承认</div>
+                    <div class="agreement-option" onclick="selectAgreement('输的人写戒烟心得分享')">写心得</div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- 其他设置 -->
+        <div class="form-section">
+            <div class="section-title">⚙️ 其他设置</div>
+            <div class="form-group">
+                <label class="form-label">每日打卡提醒时间</label>
+                <input type="time" class="form-input" id="reminderTime" value="20:00">
+            </div>
+        </div>
+    </div>
+
+    <!-- 保存确认模态框 -->
+    <div class="modal" id="saveModal">
+        <div class="modal-content">
+            <div class="modal-title">确认保存修改</div>
+            <div style="margin-bottom: 20px; font-size: 14px; color: var(--text-gray);">
+                修改内容需要其他参与者同意<br>
+                确认保存并发送修改请求吗？
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal('saveModal')">取消</button>
+                <button class="modal-btn confirm" onclick="confirmSave()">确认保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 页面跳转
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        // 选择约定
+        function selectAgreement(agreement) {
+            // 移除所有选择状态
+            document.querySelectorAll('.agreement-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // 设置当前选择
+            event.target.classList.add('selected');
+            document.getElementById('agreementInput').value = agreement;
+        }
+
+        // 保存修改
+        function saveChanges() {
+            document.getElementById('saveModal').style.display = 'flex';
+        }
+
+        // 确认保存
+        function confirmSave() {
+            const period = document.getElementById('periodSelect').value;
+            const agreement = document.getElementById('agreementInput').value;
+            const reminderTime = document.getElementById('reminderTime').value;
+            
+            // 验证输入
+            if (!agreement.trim()) {
+                alert('请填写约定内容');
+                return;
+            }
+            
+            alert('修改请求已发送，等待其他参与者同意');
+            closeModal('saveModal');
+            
+            // 跳转到修改确认页面
+            setTimeout(() => {
+                window.location.href = 'bet-modify-agree.html';
+            }, 1000);
+        }
+
+        // 关闭模态框
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // 点击模态框背景关闭
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        });
+
+        // 页面加载时初始化数据
+        document.addEventListener('DOMContentLoaded', function() {
+            // 这里可以从localStorage加载现有赌约数据
+            const currentBet = JSON.parse(localStorage.getItem('currentBet') || '{}');
+            
+            if (currentBet.period) {
+                document.getElementById('periodSelect').value = currentBet.period;
+            }
+            
+            if (currentBet.stake) {
+                document.getElementById('agreementInput').value = currentBet.stake;
+            }
+        });
+    </script>
+</body>
+</html>

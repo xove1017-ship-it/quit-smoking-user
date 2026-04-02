@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置赌约周期 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        /* 周期选择区域 */
+        .period-selection {
+            padding: 20px;
+        }
+
+        .period-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .period-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            box-shadow: var(--shadow);
+        }
+
+        .period-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .period-card.selected {
+            border-color: var(--primary-color);
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .period-days {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .period-label {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 自定义周期 */
+        .custom-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow);
+        }
+
+        .custom-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .custom-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .custom-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .custom-input-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .number-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .number-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .input-label {
+            font-size: 14px;
+            color: var(--text-gray);
+            min-width: 60px;
+        }
+
+        .custom-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        /* 开始日期 */
+        .start-date-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow);
+        }
+
+        .date-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .date-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .date-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .date-options {
+            display: flex;
+            gap: 12px;
+        }
+
+        .date-option {
+            flex: 1;
+            background: var(--background-light);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .date-option.selected {
+            border-color: var(--primary-color);
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .option-label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .option-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 按钮区域 */
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .prev-btn {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+
+        .prev-btn:hover {
+            background: var(--background-light);
+        }
+
+        .next-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 25px;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 2;
+            transition: all 0.3s ease;
+        }
+
+        .next-btn:disabled {
+            background: var(--text-gray);
+            cursor: not-allowed;
+        }
+
+        .next-btn:not(:disabled):hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="page-title">设置赌约周期</div>
+        <div class="page-subtitle">📅 选择挑战时长和开始时间</div>
+    </div>
+
+    <!-- 周期选择区域 -->
+    <div class="period-selection">
+        <!-- 预设周期 -->
+        <div class="period-grid">
+            <div class="period-card fade-in" data-days="7" onclick="selectPeriod('7')">
+                <div class="period-days">7天</div>
+                <div class="period-label">一周挑战</div>
+            </div>
+            
+            <div class="period-card fade-in" data-days="14" onclick="selectPeriod('14')">
+                <div class="period-days">14天</div>
+                <div class="period-label">两周挑战</div>
+            </div>
+            
+            <div class="period-card fade-in" data-days="21" onclick="selectPeriod('21')">
+                <div class="period-days">21天</div>
+                <div class="period-label">三周挑战</div>
+            </div>
+            
+            <div class="period-card fade-in" data-days="30" onclick="selectPeriod('30')">
+                <div class="period-days">30天</div>
+                <div class="period-label">一个月</div>
+            </div>
+            
+            <div class="period-card fade-in" data-days="60" onclick="selectPeriod('60')">
+                <div class="period-days">60天</div>
+                <div class="period-label">两个月</div>
+            </div>
+            
+            <div class="period-card fade-in" data-days="90" onclick="selectPeriod('90')">
+                <div class="period-days">90天</div>
+                <div class="period-label">三个月</div>
+            </div>
+        </div>
+
+        <!-- 自定义周期 -->
+        <div class="custom-section fade-in" id="customSection" style="display: none;">
+            <div class="custom-header">
+                <div class="custom-icon">🔢</div>
+                <div class="custom-title">自定义周期</div>
+            </div>
+            <div class="custom-input-group">
+                <span class="input-label">挑战时长</span>
+                <input type="number" class="number-input" id="customDays" min="1" max="365" value="7" onchange="updateCustomDays()">
+                <span class="input-label">天</span>
+            </div>
+            <div class="custom-desc">建议设置7-90天的挑战周期，更容易坚持</div>
+        </div>
+
+        <!-- 开始日期 -->
+        <div class="start-date-section fade-in">
+            <div class="date-header">
+                <div class="date-icon">📅</div>
+                <div class="date-title">开始时间</div>
+            </div>
+            <div class="date-options">
+                <div class="date-option" data-start="today" onclick="selectStartDate('today')">
+                    <div class="option-label">今天开始</div>
+                    <div class="option-desc">立即开始挑战</div>
+                </div>
+                <div class="date-option" data-start="tomorrow" onclick="selectStartDate('tomorrow')">
+                    <div class="option-label">明天开始</div>
+                    <div class="option-desc">准备一天</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 按钮区域 -->
+        <div class="button-group">
+            <button class="prev-btn" onclick="goBack()">
+                上一步
+            </button>
+            <button class="next-btn" id="nextBtn" disabled onclick="goToNextStep()">
+                下一步：设置赌注
+            </button>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index-new.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        let selectedPeriod = null;
+        let selectedStartDate = null;
+        let isCustomPeriod = false;
+
+        // 页面加载时恢复之前的选择
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedPeriod = localStorage.getItem('selectedPeriod');
+            const savedStartDate = localStorage.getItem('selectedStartDate');
+            
+            if (savedPeriod) {
+                selectPeriod(savedPeriod);
+            }
+            
+            if (savedStartDate) {
+                selectStartDate(savedStartDate);
+            }
+        });
+
+        // 选择周期
+        function selectPeriod(days) {
+            // 移除所有选择状态
+            document.querySelectorAll('.period-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // 设置当前选择
+            document.querySelector(`[data-days="${days}"]`).classList.add('selected');
+            selectedPeriod = days;
+            isCustomPeriod = false;
+            
+            // 隐藏自定义区域
+            document.getElementById('customSection').style.display = 'none';
+            
+            checkNextButton();
+        }
+
+        // 选择自定义周期
+        function selectCustomPeriod() {
+            // 移除所有选择状态
+            document.querySelectorAll('.period-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            selectedPeriod = document.getElementById('customDays').value;
+            isCustomPeriod = true;
+            
+            // 显示自定义区域
+            document.getElementById('customSection').style.display = 'block';
+            
+            checkNextButton();
+        }
+
+        // 更新自定义天数
+        function updateCustomDays() {
+            const daysInput = document.getElementById('customDays');
+            let value = parseInt(daysInput.value);
+            
+            if (value < 1) value = 1;
+            if (value > 365) value = 365;
+            
+            daysInput.value = value;
+            selectedPeriod = value;
+            
+            checkNextButton();
+        }
+
+        // 选择开始日期
+        function selectStartDate(date) {
+            // 移除所有选择状态
+            document.querySelectorAll('.date-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // 设置当前选择
+            document.querySelector(`[data-start="${date}"]`).classList.add('selected');
+            selectedStartDate = date;
+            
+            checkNextButton();
+        }
+
+        // 检查下一步按钮状态
+        function checkNextButton() {
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.disabled = !(selectedPeriod && selectedStartDate);
+        }
+
+        // 下一步
+        function goToNextStep() {
+            if (!selectedPeriod || !selectedStartDate) return;
+            
+            // 保存选择到本地存储
+            localStorage.setItem('selectedPeriod', selectedPeriod);
+            localStorage.setItem('selectedStartDate', selectedStartDate);
+            localStorage.setItem('isCustomPeriod', isCustomPeriod.toString());
+            
+            // 跳转到赌注设置页面
+            window.location.href = 'bet-stake-setup.html';
+        }
+
+        // 上一步
+        function goBack() {
+            window.location.href = 'bet-type-select.html';
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            if (page !== 'bet-period-setup.html') {
+                window.location.href = page;
+            }
+        }
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.2}s`;
+            });
+        });
+    </script>
+</body>
+</html>

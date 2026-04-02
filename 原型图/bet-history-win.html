@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>获胜赌约详情 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--text-gray);
+        }
+
+        .share-btn {
+            background: var(--success-green);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* 胜利庆祝 */
+        .victory-celebration {
+            background: linear-gradient(135deg, var(--success-green), #2ECC71);
+            color: var(--white);
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .victory-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .victory-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .victory-desc {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        /* 赌约基本信息 */
+        .bet-info {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .bet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .bet-opponent {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .opponent-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 18px;
+        }
+
+        .opponent-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .opponent-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .bet-period {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        .bet-status {
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 16px;
+            background: var(--success-green);
+            color: var(--white);
+            font-weight: 600;
+        }
+
+        .bet-stake {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent-orange);
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        /* 最终结果 */
+        .final-result {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .result-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .result-desc {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--success-green);
+            margin-bottom: 20px;
+        }
+
+        .result-stake {
+            font-size: 16px;
+            color: var(--accent-orange);
+            margin-bottom: 16px;
+        }
+
+        /* 统计信息 */
+        .stats-section {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .stats-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 16px;
+            background: var(--background-light);
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 参与者对比 */
+        .participants-comparison {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .comparison-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .participant-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .participant-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .participant-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 14px;
+        }
+
+        .participant-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .participant-stats {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        .winner-badge {
+            background: var(--success-green);
+            color: var(--white);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        /* 时间线 */
+        .timeline-section {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .timeline-day {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .day-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--background-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-gray);
+        }
+
+        .day-status {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--background-light);
+            border-radius: 8px;
+        }
+
+        .status-icons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .status-icon.checked {
+            background: var(--success-green);
+            color: var(--white);
+        }
+
+        .status-icon.smoked {
+            background: var(--error-red);
+            color: var(--white);
+        }
+
+        .status-icon.pending {
+            background: var(--text-gray);
+            color: var(--white);
+        }
+
+        .status-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: var(--text-gray);
+            white-space: nowrap;
+        }
+
+        .day-time {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 操作按钮 */
+        .action-buttons {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.primary {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .action-btn.secondary {
+            background: var(--background-light);
+            color: var(--text-gray);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 分享海报模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .poster-content {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 300px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .poster-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--success-green);
+        }
+
+        .poster-desc {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: var(--text-dark);
+        }
+
+        .poster-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .poster-stat {
+            background: var(--background-light);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .poster-stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .poster-stat-label {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .poster-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .poster-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .poster-btn.save {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .poster-btn.share {
+            background: var(--success-green);
+            color: var(--white);
+        }
+
+        /* 动画效果 */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <button class="back-btn" onclick="goBack()">← 返回</button>
+        <div class="page-title">获胜赌约详情</div>
+        <button class="share-btn" onclick="showSharePoster()">分享胜利</button>
+    </div>
+
+    <!-- 胜利庆祝 -->
+    <div class="victory-celebration">
+        <div class="victory-icon">🏆</div>
+        <div class="victory-title">恭喜获胜！</div>
+        <div class="victory-desc">您成功完成了7天戒烟挑战</div>
+    </div>
+
+    <!-- 赌约基本信息 -->
+    <div class="bet-info">
+        <div class="bet-header">
+            <div class="bet-opponent">
+                <div class="opponent-avatar">李</div>
+                <div class="opponent-info">
+                    <div class="opponent-name">两人7天赌约</div>
+                    <div class="bet-period">已结束</div>
+                </div>
+            </div>
+            <div class="bet-status">获胜</div>
+        </div>
+        <div class="bet-stake">赌注：请看电影</div>
+    </div>
+
+    <!-- 最终结果 -->
+    <div class="final-result">
+        <div class="result-title">🎉 挑战结果</div>
+        <div class="result-desc">您以7天全勤的成绩获胜！</div>
+        <div class="result-stake">李华已兑现约定：请看电影</div>
+    </div>
+
+    <!-- 统计信息 -->
+    <div class="stats-section">
+        <div class="stats-title">📊 挑战统计</div>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">7</div>
+                <div class="stat-label">挑战天数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">7</div>
+                <div class="stat-label">无烟天数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">0</div>
+                <div class="stat-label">吸烟天数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">100%</div>
+                <div class="stat-label">成功率</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 参与者对比 -->
+    <div class="participants-comparison">
+        <div class="comparison-title">👥 参与者对比</div>
+        <div class="participant-row">
+            <div class="participant-info">
+                <div class="participant-avatar">我</div>
+                <div>
+                    <div class="participant-name">李明</div>
+                    <div class="participant-stats">7天全勤</div>
+                </div>
+            </div>
+            <div class="winner-badge">冠军</div>
+        </div>
+        <div class="participant-row">
+            <div class="participant-info">
+                <div class="participant-avatar">李</div>
+                <div>
+                    <div class="participant-name">李华</div>
+                    <div class="participant-stats">6天无烟</div>
+                </div>
+            </div>
+            <div class="participant-stats">第2名</div>
+        </div>
+    </div>
+
+    <!-- 时间线 -->
+    <div class="timeline-section">
+        <div class="timeline-title">📅 打卡时间线</div>
+        <div class="timeline">
+            <div class="timeline-day">
+                <div class="day-number">7</div>
+                <div class="day-status">
+                    <div class="status-icons">
+                        <div class="status-icon checked">✓
+                            <div class="status-label">我</div>
+                        </div>
+                        <div class="status-icon checked">✓
+                            <div class="status-label">李华</div>
+                        </div>
+                    </div>
+                    <div class="day-time">第7天 18:30</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">6</div>
+                <div class="day-status">
+                    <div class="status-icons">
+                        <div class="status-icon checked">✓
+                            <div class="status-label">我</div>
+                        </div>
+                        <div class="status-icon checked">✓
+                            <div class="status-label">李华</div>
+                        </div>
+                    </div>
+                    <div class="day-time">第6天 19:15</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">5</div>
+                <div class="day-status">
+                    <div class="status-icons">
+                        <div class="status-icon checked">✓
+                            <div class="status-label">我</div>
+                        </div>
+                        <div class="status-icon smoked">✗
+                            <div class="status-label">李华</div>
+                        </div>
+                    </div>
+                    <div class="day-time">第5天 20:00</div>
+                </div>
+            </div>
+            <!-- 更多时间线项目 -->
+            <div class="timeline-day">
+                <div class="day-number">4</div>
+                <div class="day-status">
+                    <div class="status-icons">
+                        <div class="status-icon checked">✓
+                            <div class="status-label">我</div>
+                        </div>
+                        <div class="status-icon checked">✓
+                            <div class="status-label">李华</div>
+                        </div>
+                    </div>
+                    <div class="day-time">第4天 19:45</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">3</div>
+                <div class="day-status">
+                    <div class="status-icons">
+                        <div class="status-icon checked">✓
+                            <div class="status-label">我</div>
+                        </div>
+                        <div class="status-icon checked">✓
+                            <div class="status-label">李华</div>
+                        </div>
+                    </div>
+                    <div class="day-time">第3天 20:20</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">2</div>
+                <div class="day-status">
+                    <div class="status-icons">
+                        <div class="status-icon checked">✓
+                            <div class="status-label">我</div>
+                        </div>
+                        <div class="status-icon checked">✓
+                            <div class="status-label">李华</div>
+                        </div>
+                    </div>
+                    <div class="day-time">第2天 18:50</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">1</div>
+                <div class="day-status">
+                    <div class="status-icons">
+                        <div class="status-icon checked">✓
+                            <div class="status-label">我</div>
+                        </div>
+                        <div class="status-icon checked">✓
+                            <div class="status-label">李华</div>
+                        </div>
+                    </div>
+                    <div class="day-time">第1天 21:00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="action-buttons">
+        <button class="action-btn primary" onclick="createNewBet()">发起新赌约</button>
+        <button class="action-btn secondary" onclick="viewAllHistory()">查看所有历史</button>
+    </div>
+
+    <!-- 分享海报模态框 -->
+    <div class="modal" id="sharePosterModal">
+        <div class="poster-content">
+            <div class="poster-title">🏆 戒烟胜利！</div>
+            <div class="poster-desc">李明成功完成7天戒烟挑战</div>
+            <div class="poster-stats">
+                <div class="poster-stat">
+                    <div class="poster-stat-value">7</div>
+                    <div class="poster-stat-label">挑战天数</div>
+                </div>
+                <div class="poster-stat">
+                    <div class="poster-stat-value">100%</div>
+                    <div class="poster-stat-label">成功率</div>
+                </div>
+                <div class="poster-stat">
+                    <div class="poster-stat-value">7</div>
+                    <div class="poster-stat-label">无烟天数</div>
+                </div>
+                <div class="poster-stat">
+                    <div class="poster-stat-value">1</div>
+                    <div class="poster-stat-label">参与人数</div>
+                </div>
+            </div>
+            <div class="poster-buttons">
+                <button class="poster-btn save" onclick="savePoster()">保存海报</button>
+                <button class="poster-btn share" onclick="sharePoster()">立即分享</button>
+            </div>
+            <button class="back-btn" onclick="closePoster()" style="margin-top: 16px; background: none; border: none; color: var(--text-gray); cursor: pointer;">关闭</button>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item active">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 返回上一页
+        function goBack() {
+            window.history.back();
+        }
+
+        // 显示分享海报
+        function showSharePoster() {
+            document.getElementById('sharePosterModal').style.display = 'flex';
+        }
+
+        // 关闭海报
+        function closePoster() {
+            document.getElementById('sharePosterModal').style.display = 'none';
+        }
+
+        // 保存海报
+        function savePoster() {
+            alert('海报已保存到相册');
+            closePoster();
+        }
+
+        // 分享海报
+        function sharePoster() {
+            alert('已生成分享链接，可以分享给好友');
+            closePoster();
+        }
+
+        // 发起新赌约
+        function createNewBet() {
+            window.location.href = 'bet-type-select.html';
+        }
+
+        // 查看所有历史
+        function viewAllHistory() {
+            window.location.href = 'bet-list.html';
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        // 底部导航交互
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.nav-item').forEach(nav => {
+                        nav.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

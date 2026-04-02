@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邀请好友 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--text-gray);
+        }
+
+        .invite-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* 邀请内容 */
+        .invite-content {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .invite-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .group-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 24px;
+        }
+
+        .group-info {
+            flex: 1;
+        }
+
+        .group-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .group-stats {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        .invite-message {
+            background: var(--background-light);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .message-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .message-text {
+            font-size: 14px;
+            color: var(--text-gray);
+            line-height: 1.5;
+        }
+
+        /* 邀请方式 */
+        .invite-methods {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .method-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .method-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .method-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        .method-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 18px;
+        }
+
+        .method-info {
+            flex: 1;
+        }
+
+        .method-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .method-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 邀请链接 */
+        .invite-link-section {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .link-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .link-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--background-light);
+        }
+
+        .copy-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .link-tip {
+            font-size: 12px;
+            color: var(--text-gray);
+            text-align: center;
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <button class="back-btn" onclick="goBack()">← 返回</button>
+        <div class="page-title">邀请好友</div>
+        <button class="invite-btn" onclick="sendInvites()">发送邀请</button>
+    </div>
+
+    <!-- 邀请内容 -->
+    <div class="invite-content fade-in">
+        <div class="invite-header">
+            <div class="group-icon">💪</div>
+            <div class="group-info">
+                <div class="group-name">戒烟互助群</div>
+                <div class="group-stats">👥 28位成员 · 85%成功率</div>
+            </div>
+        </div>
+        
+        <div class="invite-message">
+            <div class="message-title">💌 邀请消息</div>
+            <div class="message-text">
+                我正在参加"戒烟互助群"，这是一个温暖的戒烟社区。
+                大家一起互相监督、分享经验，戒烟成功率高达85%！
+                邀请你一起加入，我们共同战胜烟瘾！
+            </div>
+        </div>
+    </div>
+
+    <!-- 邀请方式 -->
+    <div class="invite-methods fade-in">
+        <div class="section-title">📤 邀请方式</div>
+        
+        <div class="method-list">
+            <div class="method-item" onclick="inviteByWeChat()">
+                <div class="method-icon">💬</div>
+                <div class="method-info">
+                    <div class="method-name">微信好友</div>
+                    <div class="method-desc">分享给微信好友或群聊</div>
+                </div>
+            </div>
+            
+            <div class="method-item" onclick="inviteByQRCode()">
+                <div class="method-icon">📱</div>
+                <div class="method-info">
+                    <div class="method-name">二维码邀请</div>
+                    <div class="method-desc">生成专属二维码分享</div>
+                </div>
+            </div>
+            
+            <div class="method-item" onclick="inviteByLink()">
+                <div class="method-icon">🔗</div>
+                <div class="method-info">
+                    <div class="method-name">链接邀请</div>
+                    <div class="method-desc">复制邀请链接分享</div>
+                </div>
+            </div>
+            
+            <div class="method-item" onclick="inviteByContact()">
+                <div class="method-icon">👥</div>
+                <div class="method-info">
+                    <div class="method-name">通讯录好友</div>
+                    <div class="method-desc">从通讯录选择好友</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 邀请链接 -->
+    <div class="invite-link-section fade-in">
+        <div class="section-title">🔗 邀请链接</div>
+        
+        <div class="link-container">
+            <input type="text" class="link-input" id="inviteLink" value="https://jq.weixin.com/invite/abc123" readonly>
+            <button class="copy-btn" onclick="copyLink()">复制</button>
+        </div>
+        
+        <div class="link-tip">复制链接发送给好友，点击即可加入小组</div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 返回上一页
+        function goBack() {
+            window.history.back();
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        // 发送邀请
+        function sendInvites() {
+            alert('邀请已发送给选中的好友');
+        }
+
+        // 微信邀请
+        function inviteByWeChat() {
+            alert('已生成微信分享卡片，可以分享给好友');
+        }
+
+        // 二维码邀请
+        function inviteByQRCode() {
+            alert('已生成专属二维码，可以保存图片分享');
+        }
+
+        // 链接邀请
+        function inviteByLink() {
+            copyLink();
+            alert('邀请链接已复制到剪贴板');
+        }
+
+        // 通讯录邀请
+        function inviteByContact() {
+            alert('打开通讯录选择好友');
+        }
+
+        // 复制链接
+        function copyLink() {
+            const linkInput = document.getElementById('inviteLink');
+            linkInput.select();
+            document.execCommand('copy');
+            
+            // 显示复制成功提示
+            const copyBtn = document.querySelector('.copy-btn');
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '已复制';
+            copyBtn.style.background = '#27AE60';
+            
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.background = 'var(--primary-color)';
+            }, 2000);
+        }
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.2}s`;
+            });
+        });
+    </script>
+</body>
+</html>

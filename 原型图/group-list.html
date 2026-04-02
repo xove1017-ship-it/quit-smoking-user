@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戒烟小组 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .create-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* 小组列表 */
+        .group-list {
+            padding: 16px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .section-count {
+            font-size: 12px;
+            color: var(--text-gray);
+            background: var(--background-light);
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .group-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .group-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .group-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .group-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 18px;
+        }
+
+        .group-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .group-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .group-members {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .group-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: var(--accent-orange);
+            color: var(--white);
+        }
+
+        .group-description {
+            font-size: 14px;
+            color: var(--text-gray);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .group-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-gray);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="page-title">戒烟小组</div>
+        <button class="create-btn" onclick="createGroup()">创建小组</button>
+    </div>
+
+    <!-- 小组列表 -->
+    <div class="group-list">
+        <div class="section-header">
+            <div class="section-title">👥 我加入的小组</div>
+            <div class="section-count">3个</div>
+        </div>
+
+        <!-- 小组卡片1 -->
+        <div class="group-card fade-in" onclick="openGroup('戒烟互助群')">
+            <div class="group-header">
+                <div class="group-info">
+                    <div class="group-icon">💪</div>
+                    <div class="group-details">
+                        <div class="group-name">戒烟互助群</div>
+                        <div class="group-members">👥 28位成员</div>
+                    </div>
+                </div>
+                <div class="group-status">活跃</div>
+            </div>
+            <div class="group-description">
+                互相监督，共同戒烟！每天分享戒烟心得，互相鼓励支持。
+            </div>
+            <div class="group-stats">
+                <div class="stat-item">
+                    <div class="stat-value">85%</div>
+                    <div class="stat-label">成功率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">今日打卡</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">新消息</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 小组卡片2 -->
+        <div class="group-card fade-in" onclick="openGroup('30天挑战营')">
+            <div class="group-header">
+                <div class="group-info">
+                    <div class="group-icon">🏆</div>
+                    <div class="group-details">
+                        <div class="group-name">30天挑战营</div>
+                        <div class="group-members">👥 15位成员</div>
+                    </div>
+                </div>
+                <div class="group-status">进行中</div>
+            </div>
+            <div class="group-description">
+                30天无烟挑战，坚持就是胜利！完成挑战可获得专属勋章。
+            </div>
+            <div class="group-stats">
+                <div class="stat-item">
+                    <div class="stat-value">78%</div>
+                    <div class="stat-label">成功率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">8</div>
+                    <div class="stat-label">今日打卡</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">新消息</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 小组卡片3 -->
+        <div class="group-card fade-in" onclick="openGroup('老烟枪互助会')">
+            <div class="group-header">
+                <div class="group-info">
+                    <div class="group-icon">🚭</div>
+                    <div class="group-details">
+                        <div class="group-name">老烟枪互助会</div>
+                        <div class="group-members">👥 42位成员</div>
+                    </div>
+                </div>
+                <div class="group-status">活跃</div>
+            </div>
+            <div class="group-description">
+                专为长期吸烟者设立的互助小组，分享戒烟经验，共同克服烟瘾。
+            </div>
+            <div class="group-stats">
+                <div class="stat-item">
+                    <div class="stat-value">65%</div>
+                    <div class="stat-label">成功率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">18</div>
+                    <div class="stat-label">今日打卡</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">新消息</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 推荐小组 -->
+        <div class="section-header" style="margin-top: 32px;">
+            <div class="section-title">🌟 推荐小组</div>
+            <div class="section-count">2个</div>
+        </div>
+
+        <!-- 推荐小组1 -->
+        <div class="group-card fade-in" onclick="joinGroup('新手戒烟营')">
+            <div class="group-header">
+                <div class="group-info">
+                    <div class="group-icon">🌱</div>
+                    <div class="group-details">
+                        <div class="group-name">新手戒烟营</div>
+                        <div class="group-members">👥 23位成员</div>
+                    </div>
+                </div>
+                <div class="group-status">可加入</div>
+            </div>
+            <div class="group-description">
+                专为戒烟新手设计，从零开始学习戒烟技巧，轻松度过戒断期。
+            </div>
+            <div class="group-stats">
+                <div class="stat-item">
+                    <div class="stat-value">92%</div>
+                    <div class="stat-label">成功率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">15</div>
+                    <div class="stat-label">今日打卡</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">-</div>
+                    <div class="stat-label">新消息</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 推荐小组2 -->
+        <div class="group-card fade-in" onclick="joinGroup('健康生活圈')">
+            <div class="group-header">
+                <div class="group-info">
+                    <div class="group-icon">💚</div>
+                    <div class="group-details">
+                        <div class="group-name">健康生活圈</div>
+                        <div class="group-members">👥 56位成员</div>
+                    </div>
+                </div>
+                <div class="group-status">可加入</div>
+            </div>
+            <div class="group-description">
+                不仅仅是戒烟，更是健康生活方式的转变。分享运动、饮食、心理健康。
+            </div>
+            <div class="group-stats">
+                <div class="stat-item">
+                    <div class="stat-value">88%</div>
+                    <div class="stat-label">成功率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">22</div>
+                    <div class="stat-label">今日打卡</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">-</div>
+                    <div class="stat-label">新消息</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item active">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 打开小组详情
+        function openGroup(groupName) {
+            window.location.href = 'group-detail.html';
+        }
+
+        // 加入小组
+        function joinGroup(groupName) {
+            if (confirm(`确定要加入${groupName}吗？`)) {
+                alert(`成功加入${groupName}！`);
+                // 实际应用中这里会更新小组状态
+            }
+        }
+
+        // 创建小组
+        function createGroup() {
+            window.location.href = 'group-create.html';
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            if (page !== 'group-list.html') {
+                window.location.href = page;
+            }
+        }
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.2}s`;
+            });
+        });
+    </script>
+</body>
+</html>

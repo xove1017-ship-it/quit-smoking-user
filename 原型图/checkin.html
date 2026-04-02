@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今日打卡 - 戒烟小程序</title>
+    <style>
+        :root {
+            --primary-color: #1ABC9C;
+            --secondary-color: #16A085;
+            --white: #FFFFFF;
+            --text-dark: #333333;
+            --text-gray: #666666;
+            --border-color: #E0E0E0;
+            --success-color: #27AE60;
+            --warning-color: #E74C3C;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #F5F5F5;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 100%;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .header {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 16px;
+        }
+
+        .checkin-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .checkin-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .checkin-date {
+            font-size: 14px;
+            color: var(--text-gray);
+            margin-bottom: 20px;
+        }
+
+        .checkin-options {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .checkin-option {
+            flex: 1;
+            padding: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .checkin-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .checkin-option.success {
+            border-color: var(--success-color);
+        }
+
+        .checkin-option.warning {
+            border-color: var(--warning-color);
+        }
+
+        .checkin-option.selected {
+            background: rgba(26, 188, 156, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .option-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .option-text {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .option-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .checkin-btn {
+            width: 100%;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkin-btn:hover {
+            background: #16A085;
+            transform: translateY(-2px);
+        }
+
+        .checkin-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .impact-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .impact-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary-color);
+        }
+
+        .impact-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .impact-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .impact-icon {
+            font-size: 16px;
+        }
+
+        .impact-text {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .stats-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stats-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary-color);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">←</button>
+            <div class="header-title">今日打卡</div>
+        </div>
+
+        <div class="content">
+            <!-- 打卡卡片 -->
+            <div class="checkin-card">
+                <div class="checkin-title">今日控烟状态</div>
+                <div class="checkin-date" id="currentDate">2026年3月29日</div>
+                
+                <div class="checkin-options">
+                    <div class="checkin-option success" onclick="selectOption('success')">
+                        <div class="option-icon">✅</div>
+                        <div class="option-text">控烟成功</div>
+                        <div class="option-desc">今日未吸烟</div>
+                    </div>
+                    <div class="checkin-option warning" onclick="selectOption('warning')">
+                        <div class="option-icon">⚠️</div>
+                        <div class="option-text">没忍住</div>
+                        <div class="option-desc">今日有吸烟</div>
+                    </div>
+                </div>
+                
+                <button class="checkin-btn" id="checkinBtn" onclick="submitCheckin()" disabled>提交打卡</button>
+            </div>
+
+            <!-- 影响范围 -->
+            <div class="impact-section">
+                <div class="impact-title">📋 打卡影响范围</div>
+                <div class="impact-list">
+                    <div class="impact-item">
+                        <div class="impact-icon">📊</div>
+                        <div class="impact-text">个人戒烟记录</div>
+                    </div>
+                    <div class="impact-item">
+                        <div class="impact-icon">🎖️</div>
+                        <div class="impact-text">勋章系统进度</div>
+                    </div>
+                    <div class="impact-item">
+                        <div class="impact-icon">👥</div>
+                        <div class="impact-text">所有参与的小组</div>
+                    </div>
+                    <div class="impact-item">
+                        <div class="impact-icon">💰</div>
+                        <div class="impact-text">所有参与的赌约</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计数据 -->
+            <div class="stats-section">
+                <div class="stats-title">📈 今日统计</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">45天</div>
+                        <div class="stat-label">连续控烟天数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">98%</div>
+                        <div class="stat-label">30天成功率</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">7</div>
+                        <div class="stat-label">完美周数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">2</div>
+                        <div class="stat-label">参与小组</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedOption = null;
+        
+        function goBack() {
+            window.history.back();
+        }
+
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        function selectOption(option) {
+            selectedOption = option;
+            
+            // 移除所有选项的选中状态
+            document.querySelectorAll('.checkin-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // 添加选中状态
+            if (option === 'success') {
+                document.querySelector('.checkin-option.success').classList.add('selected');
+            } else {
+                document.querySelector('.checkin-option.warning').classList.add('selected');
+            }
+            
+            // 启用提交按钮
+            document.getElementById('checkinBtn').disabled = false;
+        }
+
+        function submitCheckin() {
+            if (!selectedOption) {
+                alert('请选择今日控烟状态');
+                return;
+            }
+            
+            // 获取当前日期
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            // 保存打卡记录到本地存储
+            const checkinData = {
+                date: dateStr,
+                status: selectedOption,
+                timestamp: now.getTime()
+            };
+            
+            // 获取历史打卡记录
+            let checkinHistory = JSON.parse(localStorage.getItem('checkinHistory') || '[]');
+            
+            // 检查今天是否已经打卡
+            const todayCheckin = checkinHistory.find(item => 
+                new Date(item.timestamp).toDateString() === now.toDateString()
+            );
+            
+            if (todayCheckin) {
+                // 更新今天的打卡记录
+                todayCheckin.status = selectedOption;
+                todayCheckin.timestamp = now.getTime();
+            } else {
+                // 添加新的打卡记录
+                checkinHistory.push(checkinData);
+            }
+            
+            // 保存到本地存储
+            localStorage.setItem('checkinHistory', JSON.stringify(checkinHistory));
+            
+            // 更新全局打卡状态
+            localStorage.setItem('todayCheckin', JSON.stringify(checkinData));
+            
+            // 显示成功消息
+            const statusText = selectedOption === 'success' ? '控烟成功' : '没忍住';
+            alert(`打卡成功！今日状态：${statusText}`);
+            
+            // 跳转回首页
+            goToPage('index.html');
+        }
+
+        // 页面加载时设置当前日期
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('currentDate').textContent = dateStr;
+            
+            // 检查今天是否已经打卡
+            const todayCheckin = JSON.parse(localStorage.getItem('todayCheckin') || 'null');
+            if (todayCheckin && new Date(todayCheckin.timestamp).toDateString() === now.toDateString()) {
+                // 如果今天已经打卡，显示已选状态
+                selectOption(todayCheckin.status);
+                document.getElementById('checkinBtn').textContent = '更新打卡';
+            }
+        });
+    </script>
+</body>
+</html>

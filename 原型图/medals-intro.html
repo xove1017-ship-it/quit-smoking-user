@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>勋章介绍 - 戒烟小程序</title>
+    <style>
+        :root {
+            --primary-color: #1ABC9C;
+            --secondary-color: #16A085;
+            --white: #FFFFFF;
+            --text-dark: #333333;
+            --text-gray: #666666;
+            --border-color: #E0E0E0;
+            --success-green: #27AE60;
+            --warning-orange: #F39C12;
+            --danger-red: #E74C3C;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #F5F5F5;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 100%;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        /* 头部 */
+        .header {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* 内容区域 */
+        .content {
+            padding: 16px;
+        }
+
+        .intro-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary-color);
+        }
+
+        .intro-text {
+            font-size: 14px;
+            color: var(--text-gray);
+            line-height: 1.8;
+        }
+
+        /* 勋章规则 */
+        .medal-rules {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .rule-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(26, 188, 156, 0.1);
+        }
+
+        .rule-content {
+            flex: 1;
+        }
+
+        .rule-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .rule-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 勋章升级体系 */
+        .upgrade-system {
+            margin: 16px 0;
+        }
+
+        .upgrade-path {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .upgrade-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(26, 188, 156, 0.05);
+            width: 100%;
+        }
+
+        .step-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--white);
+        }
+
+        .step-info {
+            flex: 1;
+        }
+
+        .step-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .step-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .upgrade-arrow {
+            font-size: 16px;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        /* 勋章特权 */
+        .privilege-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .privilege-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(255, 193, 7, 0.05);
+        }
+
+        .privilege-icon {
+            font-size: 20px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 193, 7, 0.1);
+        }
+
+        .privilege-content {
+            flex: 1;
+        }
+
+        .privilege-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .privilege-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 使用建议 */
+        .tips-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .tip-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 6px;
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .tip-icon {
+            font-size: 16px;
+        }
+
+        .tip-content {
+            font-size: 13px;
+            color: var(--text-dark);
+        }
+
+        /* 勋章展示 */
+        .medals-showcase {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .medal-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 2px solid;
+        }
+
+        .medal-card.silver {
+            border-color: #C0C0C0;
+            background: linear-gradient(135deg, #F8F9FA, #E9ECEF);
+        }
+
+        .medal-card.gold {
+            border-color: #FFD700;
+            background: linear-gradient(135deg, #FFF9C4, #FFECB3);
+        }
+
+        .medal-card.rainbow {
+            border-color: #FF6B6B;
+            background: linear-gradient(135deg, #FFEAA7, #FDCB6E, #E17055);
+        }
+
+        .medal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .medal-icon {
+            font-size: 32px;
+        }
+
+        .medal-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .medal-desc {
+            font-size: 14px;
+            color: var(--text-gray);
+            line-height: 1.6;
+        }
+
+        /* 底部导航 */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid var(--border-color);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(26, 188, 156, 0.1);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">←</button>
+            <div class="header-title">勋章介绍</div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <!-- 勋章系统介绍 -->
+            <div class="intro-section">
+                <div class="section-title">🎖️ 什么是勋章系统？</div>
+                <div class="intro-text">
+                    勋章系统是戒烟小程序为您精心设计的激励体系，旨在通过可视化的成就奖励，帮助您更好地坚持控烟目标。
+                    每完成一个完美周（连续7天控烟成功），您将获得一枚银勋章，见证您的控烟成长之路。
+                </div>
+            </div>
+
+            <!-- 勋章获取方式 -->
+            <div class="intro-section">
+                <div class="section-title">🌟 如何获得勋章？</div>
+                <div class="medal-rules">
+                    <div class="rule-item">
+                        <div class="rule-icon">📅</div>
+                        <div class="rule-content">
+                            <div class="rule-title">完美周挑战</div>
+                            <div class="rule-desc">连续7天成功控烟，即可获得一枚银勋章</div>
+                        </div>
+                    </div>
+                    <div class="rule-item">
+                        <div class="rule-icon">💪</div>
+                        <div class="rule-content">
+                            <div class="rule-title">坚持的力量</div>
+                            <div class="rule-desc">每完成一个完美周，系统自动记录并颁发勋章</div>
+                        </div>
+                    </div>
+                    <div class="rule-item">
+                        <div class="rule-icon">👥</div>
+                        <div class="rule-content">
+                            <div class="rule-title">社交激励</div>
+                            <div class="rule-desc">在小组和赌约中展示您的勋章成就</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 勋章升级体系 -->
+            <div class="intro-section">
+                <div class="section-title">🔄 勋章升级规则</div>
+                <div class="upgrade-system">
+                    <div class="upgrade-path">
+                        <div class="upgrade-step">
+                            <div class="step-icon">🏅</div>
+                            <div class="step-info">
+                                <div class="step-title">银勋章</div>
+                                <div class="step-desc">每完成一个完美周获得1枚</div>
+                            </div>
+                        </div>
+                        <div class="upgrade-arrow">↓</div>
+                        <div class="upgrade-step">
+                            <div class="step-icon">🏆</div>
+                            <div class="step-info">
+                                <div class="step-title">金勋章</div>
+                                <div class="step-desc">集齐10枚银勋章自动升级</div>
+                            </div>
+                        </div>
+                        <div class="upgrade-arrow">↓</div>
+                        <div class="upgrade-step">
+                            <div class="step-icon">✨</div>
+                            <div class="step-info">
+                                <div class="step-title">五彩勋章</div>
+                                <div class="step-desc">集齐10枚金勋章自动升级</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 勋章特权 -->
+            <div class="intro-section">
+                <div class="section-title">💎 勋章特权</div>
+                <div class="privilege-list">
+                    <div class="privilege-item">
+                        <div class="privilege-icon">👑</div>
+                        <div class="privilege-content">
+                            <div class="privilege-title">VIP身份标识</div>
+                            <div class="privilege-desc">根据勋章等级显示对应的VIP角标</div>
+                        </div>
+                    </div>
+                    <div class="privilege-item">
+                        <div class="privilege-icon">🌟</div>
+                        <div class="privilege-content">
+                            <div class="privilege-title">社交荣誉</div>
+                            <div class="privilege-desc">在小组和赌约中展示您的控烟成就</div>
+                        </div>
+                    </div>
+                    <div class="privilege-item">
+                        <div class="privilege-icon">💪</div>
+                        <div class="privilege-content">
+                            <div class="privilege-title">持续动力</div>
+                            <div class="privilege-desc">可视化的进步记录，增强控烟信心</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 勋章展示 -->
+            <div class="intro-section">
+                <div class="section-title">� 勋章展示</div>
+                <div class="medals-showcase">
+                    <div class="medal-card silver">
+                        <div class="medal-header">
+                            <div class="medal-icon">🏅</div>
+                            <div class="medal-name">银勋章</div>
+                        </div>
+                        <div class="medal-desc">
+                            <strong>获取条件：</strong>连续7天控烟成功<br>
+                            <strong>代表意义：</strong>控烟之路的第一个重要里程碑<br>
+                            <strong>特权：</strong>银色VIP角标，基础社交展示
+                        </div>
+                    </div>
+                    <div class="medal-card gold">
+                        <div class="medal-header">
+                            <div class="medal-icon">🏆</div>
+                            <div class="medal-name">金勋章</div>
+                        </div>
+                        <div class="medal-desc">
+                            <strong>获取条件：</strong>集齐10枚银勋章<br>
+                            <strong>代表意义：</strong>坚持70天控烟成功的卓越成就<br>
+                            <strong>特权：</strong>金色VIP角标，高级社交荣誉
+                        </div>
+                    </div>
+                    <div class="medal-card rainbow">
+                        <div class="medal-header">
+                            <div class="medal-icon">✨</div>
+                            <div class="medal-name">五彩勋章</div>
+                        </div>
+                        <div class="medal-desc">
+                            <strong>获取条件：</strong>集齐10枚金勋章<br>
+                            <strong>代表意义：</strong>坚持700天控烟成功的终极成就<br>
+                            <strong>特权：</strong>五彩VIP角标，控烟达人的最高荣誉
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 使用建议 -->
+            <div class="intro-section">
+                <div class="section-title">💡 使用建议</div>
+                <div class="tips-list">
+                    <div class="tip-item">
+                        <div class="tip-icon">🎯</div>
+                        <div class="tip-content">设定小目标，先争取获得第一枚银勋章</div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">📊</div>
+                        <div class="tip-content">定期查看勋章进度，保持控烟动力</div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">👥</div>
+                        <div class="tip-content">在小组中分享勋章成就，互相鼓励</div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">💪</div>
+                        <div class="tip-content">每获得一枚勋章，都是对自己坚持的肯定</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部导航 -->
+        <div class="nav-bar">
+            <div class="nav-item" onclick="goToPage('index.html')">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-text">首页</div>
+            </div>
+            <div class="nav-item" onclick="goToPage('group.html')">
+                <div class="nav-icon">👥</div>
+                <div class="nav-text">小组</div>
+            </div>
+            <div class="nav-item" onclick="goToPage('bet.html')">
+                <div class="nav-icon">💰</div>
+                <div class="nav-text">赌约</div>
+            </div>
+            <div class="nav-item" onclick="goToPage('record.html')">
+                <div class="nav-icon">📊</div>
+                <div class="nav-text">记录</div>
+            </div>
+            <div class="nav-item active" onclick="goToPage('profile.html')">
+                <div class="nav-icon">👤</div>
+                <div class="nav-text">我的</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.intro-section');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                    el.style.transition = 'all 0.5s ease';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>

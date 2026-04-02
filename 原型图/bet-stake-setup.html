@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置赌约赌注 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        /* 赌注设置区域 */
+        .stake-selection {
+            padding: 20px;
+        }
+
+        /* 单人赌注 */
+        .solo-stake-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .stake-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .stake-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .stake-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .reward-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .reward-card {
+            background: var(--background-light);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .reward-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .reward-card.selected {
+            border-color: var(--primary-color);
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .reward-icon {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .reward-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .reward-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .custom-reward {
+            background: var(--white);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            width: 100%;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .custom-reward:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* 多人赌注 */
+        .multi-stake-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .stake-agreement {
+            margin-bottom: 16px;
+        }
+
+        .agreement-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .agreement-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .stake-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .stake-option {
+            background: var(--background-light);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stake-option:hover {
+            background: var(--white);
+        }
+
+        .stake-option.selected {
+            border-color: var(--primary-color);
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .stake-value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* 赌约预览 */
+        .preview-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow);
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .preview-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .preview-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .preview-content {
+            background: var(--background-light);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .preview-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .preview-label {
+            color: var(--text-gray);
+        }
+
+        .preview-value {
+            font-weight: 600;
+        }
+
+        /* 按钮区域 */
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .prev-btn {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+
+        .prev-btn:hover {
+            background: var(--background-light);
+        }
+
+        .create-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 25px;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 2;
+            transition: all 0.3s ease;
+        }
+
+        .create-btn:disabled {
+            background: var(--text-gray);
+            cursor: not-allowed;
+        }
+
+        .create-btn:not(:disabled):hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="page-title">设置赌约赌注</div>
+        <div class="page-subtitle">🎁 选择挑战成功后的奖励</div>
+    </div>
+
+    <!-- 赌注设置区域 -->
+    <div class="stake-selection">
+        <!-- 单人赌注 -->
+        <div class="solo-stake-section fade-in" id="soloStakeSection">
+            <div class="stake-header">
+                <div class="stake-icon">🎯</div>
+                <div class="stake-title">个人奖励</div>
+            </div>
+            <div class="reward-grid">
+                <div class="reward-card" data-reward="game" onclick="selectReward('game')">
+                    <div class="reward-icon">🎮</div>
+                    <div class="reward-name">买新游戏</div>
+                    <div class="reward-desc">完成挑战后奖励自己</div>
+                </div>
+                
+                <div class="reward-card" data-reward="travel" onclick="selectReward('travel')">
+                    <div class="reward-icon">✈️</div>
+                    <div class="reward-name">短途旅行</div>
+                    <div class="reward-desc">放松身心，享受生活</div>
+                </div>
+                
+                <div class="reward-card" data-reward="gadget" onclick="selectReward('gadget')">
+                    <div class="reward-icon">📱</div>
+                    <div class="reward-name">电子产品</div>
+                    <div class="reward-desc">用省下的钱购买</div>
+                </div>
+                
+                <div class="reward-card" data-reward="custom" onclick="selectReward('custom')">
+                    <div class="reward-icon">💡</div>
+                    <div class="reward-name">自定义</div>
+                    <div class="reward-desc">自由设定奖励</div>
+                </div>
+            </div>
+            <input type="text" class="custom-reward" id="customReward" placeholder="请输入您的自定义奖励..." style="display: none;">
+        </div>
+
+        <!-- 多人赌注 -->
+        <div class="multi-stake-section fade-in" id="multiStakeSection" style="display: none;">
+            <div class="stake-header">
+                <div class="stake-icon">🤝</div>
+                <div class="stake-title">约定</div>
+            </div>
+            <div class="stake-agreement">
+                <input type="text" class="agreement-input" id="stakeAgreement" placeholder="例如：输的人请赢的人吃饭" onchange="updateStakeAgreement()">
+            </div>
+            <div class="stake-options">
+                <div class="stake-option" data-agreement="输的人请赢的人吃饭" onclick="selectStakeAgreement('输的人请赢的人吃饭')">
+                    <div class="stake-value">请吃饭</div>
+                </div>
+                <div class="stake-option" data-agreement="输的人帮赢的人做一件事" onclick="selectStakeAgreement('输的人帮赢的人做一件事')">
+                    <div class="stake-value">帮做事</div>
+                </div>
+                <div class="stake-option" data-agreement="输的人公开承认戒烟成功" onclick="selectStakeAgreement('输的人公开承认戒烟成功')">
+                    <div class="stake-value">公开承认</div>
+                </div>
+                <div class="stake-option" data-agreement="输的人写戒烟心得分享" onclick="selectStakeAgreement('输的人写戒烟心得分享')">
+                    <div class="stake-value">写心得</div>
+                </div>
+                <div class="stake-option" data-agreement="custom" onclick="selectStakeAgreement('custom')">
+                    <div class="stake-value">自定义</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 赌约预览 -->
+        <div class="preview-section fade-in">
+            <div class="preview-header">
+                <div class="preview-icon">👀</div>
+                <div class="preview-title">赌约预览</div>
+            </div>
+            <div class="preview-content">
+                <div class="preview-item">
+                    <span class="preview-label">挑战类型：</span>
+                    <span class="preview-value" id="previewType">单人挑战</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">参与人数：</span>
+                    <span class="preview-value" id="previewParticipants">1人</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">挑战周期：</span>
+                    <span class="preview-value" id="previewPeriod">7天</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">开始时间：</span>
+                    <span class="preview-value" id="previewStartDate">今天</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">赌注内容：</span>
+                    <span class="preview-value" id="previewStake">买新游戏</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 按钮区域 -->
+        <div class="button-group">
+            <button class="prev-btn" onclick="goBack()">
+                上一步
+            </button>
+            <button class="create-btn" id="createBtn" disabled onclick="createBet()">
+                创建赌约
+            </button>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index-new.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        let selectedReward = null;
+        let selectedStakeAmount = null;
+        let isCustomReward = false;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取之前的选择
+            const betType = localStorage.getItem('betType');
+            const participantCount = localStorage.getItem('participantCount');
+            const selectedPeriod = localStorage.getItem('selectedPeriod');
+            const selectedStartDate = localStorage.getItem('selectedStartDate');
+            
+            // 显示对应的赌注类型
+            if (betType === 'solo') {
+                document.getElementById('soloStakeSection').style.display = 'block';
+                document.getElementById('multiStakeSection').style.display = 'none';
+            } else {
+                document.getElementById('soloStakeSection').style.display = 'none';
+                document.getElementById('multiStakeSection').style.display = 'block';
+            }
+            
+            // 更新预览
+            updatePreview(betType, participantCount, selectedPeriod, selectedStartDate);
+        });
+
+        // 选择奖励
+        function selectReward(reward) {
+            // 移除所有选择状态
+            document.querySelectorAll('.reward-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // 设置当前选择
+            document.querySelector(`[data-reward="${reward}"]`).classList.add('selected');
+            selectedReward = reward;
+            isCustomReward = false;
+            
+            // 显示/隐藏自定义输入框
+            const customRewardInput = document.getElementById('customReward');
+            if (reward === 'custom') {
+                customRewardInput.style.display = 'block';
+                isCustomReward = true;
+            } else {
+                customRewardInput.style.display = 'none';
+            }
+            
+            updatePreviewStake();
+            checkCreateButton();
+        }
+
+        // 选择口头约定
+        function selectStakeAgreement(agreement) {
+            // 移除所有选择状态
+            document.querySelectorAll('.stake-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // 设置当前选择
+            document.querySelector(`[data-agreement="${agreement}"]`).classList.add('selected');
+            
+            if (agreement === 'custom') {
+                selectedStakeAgreement = document.getElementById('stakeAgreement').value;
+            } else {
+                selectedStakeAgreement = agreement;
+                document.getElementById('stakeAgreement').value = agreement;
+            }
+            
+            updatePreviewStake();
+            checkCreateButton();
+        }
+
+        // 更新口头约定
+        function updateStakeAgreement() {
+            selectedStakeAgreement = document.getElementById('stakeAgreement').value;
+            updatePreviewStake();
+            checkCreateButton();
+        }
+
+        // 更新预览
+        function updatePreview(betType, participantCount, selectedPeriod, selectedStartDate) {
+            // 类型和人数
+            let typeText = '';
+            let participantsText = '';
+            
+            if (betType === 'solo') {
+                typeText = '单人挑战';
+                participantsText = '1人';
+            } else {
+                typeText = `${participantCount}人挑战`;
+                participantsText = `${participantCount}人`;
+            }
+            
+            document.getElementById('previewType').textContent = typeText;
+            document.getElementById('previewParticipants').textContent = participantsText;
+            
+            // 周期
+            document.getElementById('previewPeriod').textContent = `${selectedPeriod}天`;
+            
+            // 开始时间
+            const startDateText = selectedStartDate === 'today' ? '今天' : '明天';
+            document.getElementById('previewStartDate').textContent = startDateText;
+        }
+
+        // 更新赌注预览
+        function updatePreviewStake() {
+            const betType = localStorage.getItem('betType');
+            let stakeText = '';
+            
+            if (betType === 'solo') {
+                if (selectedReward === 'custom') {
+                    stakeText = document.getElementById('customReward').value || '自定义奖励';
+                } else {
+                    const rewardNames = {
+                        'game': '买新游戏',
+                        'travel': '短途旅行',
+                        'gadget': '电子产品'
+                    };
+                    stakeText = rewardNames[selectedReward] || '个人奖励';
+                }
+            } else {
+                stakeText = `${selectedStakeAmount}元`;
+            }
+            
+            document.getElementById('previewStake').textContent = stakeText;
+        }
+
+        // 检查创建按钮状态
+        function checkCreateButton() {
+            const createBtn = document.getElementById('createBtn');
+            const betType = localStorage.getItem('betType');
+            
+            if (betType === 'solo') {
+                createBtn.disabled = !selectedReward;
+            } else {
+                createBtn.disabled = !selectedStakeAmount;
+            }
+        }
+
+        // 创建赌约
+        function createBet() {
+            // 获取所有选择
+            const betType = localStorage.getItem('betType');
+            const participantCount = localStorage.getItem('participantCount');
+            const selectedPeriod = localStorage.getItem('selectedPeriod');
+            const selectedStartDate = localStorage.getItem('selectedStartDate');
+            
+            // 构建赌约数据
+            const betData = {
+                type: betType,
+                participants: participantCount,
+                period: selectedPeriod,
+                startDate: selectedStartDate,
+                stake: betType === 'solo' ? selectedReward : selectedStakeAgreement,
+                isCustomReward: isCustomReward,
+                customReward: document.getElementById('customReward').value
+            };
+            
+            // 保存赌约数据
+            localStorage.setItem('currentBet', JSON.stringify(betData));
+            
+            // 跳转到赌约详情页面
+            if (betType === 'solo') {
+                window.location.href = 'bet-detail-solo.html';
+            } else {
+                window.location.href = 'bet-detail.html';
+            }
+        }
+
+        // 上一步
+        function goBack() {
+            window.location.href = 'bet-period-setup.html';
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            if (page !== 'bet-stake-setup.html') {
+                window.location.href = page;
+            }
+        }
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.2}s`;
+            });
+        });
+    </script>
+</body>
+</html>

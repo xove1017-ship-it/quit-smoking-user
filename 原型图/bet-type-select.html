@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择赌约类型 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        /* 类型选择区域 */
+        .type-selection {
+            padding: 20px;
+        }
+
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .type-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            box-shadow: var(--shadow);
+        }
+
+        .type-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .type-card.selected {
+            border-color: var(--primary-color);
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .type-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .type-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .type-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+
+        /* 自定义人数 */
+        .custom-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow);
+        }
+
+        .custom-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .custom-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .custom-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .custom-input {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .number-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .number-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .input-label {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        /* 下一步按钮 */
+        .next-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 25px;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .next-btn:disabled {
+            background: var(--text-gray);
+            cursor: not-allowed;
+        }
+
+        .next-btn:not(:disabled):hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="page-title">选择赌约类型</div>
+        <div class="page-subtitle">🎯 选择适合您的戒烟挑战方式</div>
+    </div>
+
+    <!-- 类型选择区域 -->
+    <div class="type-selection">
+        <div class="type-grid">
+            <div class="type-card fade-in" data-type="solo" onclick="selectType('solo')">
+                <div class="type-icon">👤</div>
+                <div class="type-name">单人挑战</div>
+                <div class="type-desc">自我监督，专注个人戒烟目标</div>
+            </div>
+            
+            <div class="type-card fade-in" data-type="2" onclick="selectType('2')">
+                <div class="type-icon">👥</div>
+                <div class="type-name">2人对决</div>
+                <div class="type-desc">一对一竞争，互相监督戒烟</div>
+            </div>
+            
+            <div class="type-card fade-in" data-type="3" onclick="selectType('3')">
+                <div class="type-icon">👨‍👩‍👧</div>
+                <div class="type-name">3人小组</div>
+                <div class="type-desc">三人成组，团队协作戒烟</div>
+            </div>
+            
+            <div class="type-card fade-in" data-type="custom" onclick="selectType('custom')">
+                <div class="type-icon">🔢</div>
+                <div class="type-name">自定义</div>
+                <div class="type-desc">自由设定参与人数</div>
+            </div>
+        </div>
+
+        <!-- 自定义人数 -->
+        <div class="custom-section fade-in" id="customSection" style="display: none;">
+            <div class="custom-header">
+                <div class="custom-icon">👥</div>
+                <div class="custom-title">自定义参与人数</div>
+            </div>
+            <div class="custom-input">
+                <input type="number" class="number-input" id="customNumber" min="4" max="20" value="4" onchange="updateCustomNumber()">
+                <span class="input-label">人</span>
+            </div>
+        </div>
+
+        <!-- 下一步按钮 -->
+        <button class="next-btn" id="nextBtn" disabled onclick="goToNextStep()">
+            下一步：设置周期
+        </button>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index-new.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        let selectedType = null;
+        let participantCount = 1;
+
+        // 选择类型
+        function selectType(type) {
+            // 移除所有选择状态
+            document.querySelectorAll('.type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // 设置当前选择
+            document.querySelector(`[data-type="${type}"]`).classList.add('selected');
+            selectedType = type;
+            
+            // 显示/隐藏自定义人数区域
+            const customSection = document.getElementById('customSection');
+            if (type === 'custom') {
+                customSection.style.display = 'block';
+                participantCount = parseInt(document.getElementById('customNumber').value);
+            } else {
+                customSection.style.display = 'none';
+                if (type === 'solo') {
+                    participantCount = 1;
+                } else {
+                    participantCount = parseInt(type);
+                }
+            }
+            
+            // 启用下一步按钮
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        // 更新自定义人数
+        function updateCustomNumber() {
+            const numberInput = document.getElementById('customNumber');
+            let value = parseInt(numberInput.value);
+            
+            if (value < 4) value = 4;
+            if (value > 20) value = 20;
+            
+            numberInput.value = value;
+            participantCount = value;
+        }
+
+        // 下一步
+        function goToNextStep() {
+            if (!selectedType) return;
+            
+            // 保存选择到本地存储
+            localStorage.setItem('betType', selectedType);
+            localStorage.setItem('participantCount', participantCount.toString());
+            
+            // 跳转到周期设置页面
+            window.location.href = 'bet-period-setup.html';
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            if (page !== 'bet-type-select.html') {
+                window.location.href = page;
+            }
+        }
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.2}s`;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 用户信息卡片 */
+        .user-card {
+            background: var(--white);
+            margin: 16px;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: var(--white);
+            position: relative;
+        }
+
+        .user-name-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .edit-icon {
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .edit-icon:hover {
+            opacity: 1;
+            background: rgba(26, 188, 156, 0.1);
+            transform: scale(1.1);
+        }
+
+        .user-level {
+            font-size: 12px;
+            color: var(--accent-orange);
+            background: rgba(243, 156, 18, 0.1);
+            padding: 4px 12px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+
+        .user-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 16px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-gray);
+        }
+
+        /* 功能菜单 */
+        .menu-section {
+            background: var(--white);
+            margin: 0 16px 16px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-item:hover {
+            background: var(--background-light);
+        }
+
+        .menu-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-text {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .menu-arrow {
+            color: var(--text-gray);
+            font-size: 12px;
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* VIP标志 */
+        .vip-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            font-size: 8px;
+            padding: 2px 4px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            transform: scale(0.8);
+        }
+
+        .vip-badge.silver {
+            background: linear-gradient(45deg, #C0C0C0, #E0E0E0);
+        }
+
+        .vip-badge.gold {
+            background: linear-gradient(45deg, #FFD700, #FFEC8B);
+        }
+
+        .vip-badge.rainbow {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7);
+            background-size: 400% 400%;
+            animation: rainbow 2s infinite;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 勋章系统 */
+        .medals-section {
+            margin: 20px 0;
+            padding: 16px;
+            background: rgba(26, 188, 156, 0.05);
+            border-radius: 12px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-dark);
+        }
+
+        .medals-display {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .medal-collection {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .medal-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            border-radius: 12px;
+            border: 2px solid;
+            width: 44px;
+            height: 44px;
+        }
+
+        .medal-item.silver {
+            background: linear-gradient(135deg, #F8F9FA, #E9ECEF);
+            border-color: #C0C0C0;
+        }
+
+        .medal-item.gold {
+            background: linear-gradient(135deg, #FFF9C4, #FFECB3);
+            border-color: #FFD700;
+        }
+
+        .medal-item.rainbow {
+            background: linear-gradient(135deg, #FFEAA7, #FDCB6E, #E17055);
+            border-color: #FF6B6B;
+        }
+
+        .medal-icon {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .medal-count {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .medal-rules {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .rule-icon {
+            font-size: 14px;
+        }
+
+        .medal-progress {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #eee;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #1ABC9C, #16A085);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* 编辑按钮 */
+        .edit-section {
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .edit-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn:hover {
+            background: #16A085;
+            transform: translateY(-1px);
+        }
+
+        /* 信息链接 */
+        .info-link {
+            font-size: 12px;
+            color: var(--primary-color);
+            cursor: pointer;
+            margin-left: 8px;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .info-link:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 用户信息卡片 -->
+    <div class="user-card fade-in">
+        <div class="user-avatar">
+            👤
+            <div class="vip-badge rainbow">完美</div>
+        </div>
+        <div class="user-name-container">
+            <div class="user-name">戒烟小能手</div>
+            <div class="edit-icon" onclick="editProfile()">✏️</div>
+        </div>
+        <div class="user-level">🏆 戒烟达人</div>
+        
+        <!-- 勋章展示 -->
+        <div class="medals-section">
+            <div class="section-title">🎖️ 我的勋章</div>
+            <div class="medals-display">
+                <div class="medal-collection">
+                    <div class="medal-item rainbow" onclick="goToPage('medals-intro.html')">
+                        <div class="medal-icon">✨</div>
+                    </div>
+                    <div class="medal-item gold" onclick="goToPage('medals-intro.html')">
+                        <div class="medal-icon">🏆</div>
+                    </div>
+                    <div class="medal-item silver" onclick="goToPage('medals-intro.html')">
+                        <div class="medal-icon">🏅</div>
+                    </div>
+                    <div class="medal-item silver" onclick="goToPage('medals-intro.html')">
+                        <div class="medal-icon">🏅</div>
+                    </div>
+                    <div class="medal-item silver" onclick="goToPage('medals-intro.html')">
+                        <div class="medal-icon">🏅</div>
+                    </div>
+                    <div class="medal-item silver" onclick="goToPage('medals-intro.html')">
+                        <div class="medal-icon">🏅</div>
+                    </div>
+                    <div class="medal-item silver" onclick="goToPage('medals-intro.html')">
+                        <div class="medal-icon">🏅</div>
+                    </div>
+                </div>
+            </div>
+            <div class="medal-progress">
+                <div class="progress-text">再获得 5 枚银勋章可升级为金勋章</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 50%;"></div>
+                </div>
+            </div>
+        </div>
+        
+
+    </div>
+
+    <!-- 功能菜单 -->
+    <div class="menu-section fade-in">
+        <div class="menu-item" onclick="openSettings()">
+            <div class="menu-icon">⚙️</div>
+            <div class="menu-text">设置</div>
+            <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="openAchievements()">
+            <div class="menu-icon">🏅</div>
+            <div class="menu-text">成就与勋章</div>
+            <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="openHelp()">
+            <div class="menu-icon">❓</div>
+            <div class="menu-text">帮助与反馈</div>
+            <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="openAbout()">
+            <div class="menu-icon">ℹ️</div>
+            <div class="menu-text">关于我们</div>
+            <div class="menu-arrow">›</div>
+        </div>
+    </div>
+
+    <div class="menu-section fade-in">
+        <div class="menu-item" onclick="inviteFriends()">
+            <div class="menu-icon">👥</div>
+            <div class="menu-text">邀请好友</div>
+            <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="shareApp()">
+            <div class="menu-icon">📱</div>
+            <div class="menu-text">分享应用</div>
+            <div class="menu-arrow">›</div>
+        </div>
+        <div class="menu-item" onclick="rateApp()">
+            <div class="menu-icon">⭐</div>
+            <div class="menu-text">评价应用</div>
+            <div class="menu-arrow">›</div>
+        </div>
+    </div>
+
+    <div class="menu-section fade-in">
+        <div class="menu-item" onclick="logout()" style="color: var(--error-red);">
+            <div class="menu-icon">🚪</div>
+            <div class="menu-text">退出登录</div>
+            <div class="menu-arrow">›</div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item active">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 页面跳转
+        function goToPage(page) {
+            if (page !== 'profile.html') {
+                window.location.href = page;
+            }
+        }
+
+        // 编辑资料功能
+        function editProfile() {
+            const currentName = document.querySelector('.user-name').textContent;
+            const newName = prompt('请输入新的昵称：', currentName);
+            
+            if (newName && newName !== currentName) {
+                document.querySelector('.user-name').textContent = newName;
+                localStorage.setItem('userName', newName);
+                alert('昵称修改成功！');
+            }
+        }
+
+        // 功能菜单操作
+        function openSettings() {
+            goToPage('settings.html');
+        }
+
+        function openAchievements() {
+            goToPage('achievements.html');
+        }
+
+        function openHelp() {
+            goToPage('feedback.html');
+        }
+
+        function openAbout() {
+            goToPage('about.html');
+        }
+
+        function inviteFriends() {
+            alert('邀请好友一起戒烟');
+            // 实际应用中这里会打开邀请功能
+        }
+
+        function shareApp() {
+            alert('分享应用给朋友');
+            // 实际应用中这里会打开分享功能
+        }
+
+        function rateApp() {
+            alert('前往应用商店评价');
+            // 实际应用中这里会跳转到评价页面
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                alert('退出登录成功');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载保存的用户名
+            const savedName = localStorage.getItem('userName');
+            if (savedName) {
+                document.querySelector('.user-name').textContent = savedName;
+            }
+
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.2}s`;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>赌约 - 戒烟小程序</title>
+    <style>
+        :root {
+            --primary-color: #1ABC9C;
+            --secondary-color: #16A085;
+            --white: #FFFFFF;
+            --text-dark: #333333;
+            --text-gray: #666666;
+            --border-color: #E0E0E0;
+            --success-green: #27AE60;
+            --warning-orange: #F39C12;
+            --danger-red: #E74C3C;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #F5F5F5;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 100%;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        /* 头部 */
+        .header {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* 内容区域 */
+        .content {
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        /* 赌约列表 */
+        .bet-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bet-item {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .bet-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .bet-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 16px;
+            position: relative;
+        }
+
+        .bet-info {
+            flex: 1;
+        }
+
+        .bet-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .bet-participants {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .bet-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .bet-amount {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--danger-red);
+        }
+
+        .bet-duration {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .bet-progress {
+            margin-bottom: 12px;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-bottom: 4px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #eee;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .bet-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .join-btn {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .view-btn {
+            background: var(--white);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* VIP标志 */
+        .vip-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            font-size: 6px;
+            padding: 1px 3px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            transform: scale(0.8);
+        }
+
+        .vip-badge.silver {
+            background: linear-gradient(45deg, #C0C0C0, #E0E0E0);
+        }
+
+        .vip-badge.gold {
+            background: linear-gradient(45deg, #FFD700, #FFEC8B);
+        }
+
+        .vip-badge.rainbow {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7);
+            background-size: 400% 400%;
+            animation: rainbow 2s infinite;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 底部导航 */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid var(--border-color);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(26, 188, 156, 0.1);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        /* 创建赌约按钮 */
+        .create-bet-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(26, 188, 156, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .create-bet-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(26, 188, 156, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="header-title">赌约挑战</div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content">
+            <div class="bet-list">
+                <!-- 赌约1 -->
+                <div class="bet-item">
+                    <div class="bet-header">
+                        <div class="bet-avatar">
+                            张
+                            <div class="vip-badge gold">完美</div>
+                        </div>
+                        <div class="bet-info">
+                            <div class="bet-title">30天戒烟挑战</div>
+                            <div class="bet-participants">发起人：张伟 • 参与人数：3人</div>
+                        </div>
+                    </div>
+                    <div class="bet-details">
+                        <div class="bet-amount">¥500</div>
+                        <div class="bet-duration">剩余25天</div>
+                    </div>
+                    <div class="bet-progress">
+                        <div class="progress-text">进度：5/30天（17%）</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 17%;"></div>
+                        </div>
+                    </div>
+                    <div class="bet-actions">
+                        <button class="action-btn join-btn">参与挑战</button>
+                        <button class="action-btn view-btn">查看详情</button>
+                    </div>
+                </div>
+
+                <!-- 赌约2 -->
+                <div class="bet-item">
+                    <div class="bet-header">
+                        <div class="bet-avatar">
+                            王
+                            <div class="vip-badge silver">完美</div>
+                        </div>
+                        <div class="bet-info">
+                            <div class="bet-title">戒烟90天马拉松</div>
+                            <div class="bet-participants">发起人：王强 • 参与人数：8人</div>
+                        </div>
+                    </div>
+                    <div class="bet-details">
+                        <div class="bet-amount">¥1000</div>
+                        <div class="bet-duration">剩余15天</div>
+                    </div>
+                    <div class="bet-progress">
+                        <div class="progress-text">进度：75/90天（83%）</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 83%;"></div>
+                        </div>
+                    </div>
+                    <div class="bet-actions">
+                        <button class="action-btn join-btn">参与挑战</button>
+                        <button class="action-btn view-btn">查看详情</button>
+                    </div>
+                </div>
+
+                <!-- 赌约3 -->
+                <div class="bet-item">
+                    <div class="bet-header">
+                        <div class="bet-avatar">
+                            李
+                            <div class="vip-badge silver">完美</div>
+                        </div>
+                        <div class="bet-info">
+                            <div class="bet-title">春节戒烟挑战</div>
+                            <div class="bet-participants">发起人：李华 • 参与人数：12人</div>
+                        </div>
+                    </div>
+                    <div class="bet-details">
+                        <div class="bet-amount">¥200</div>
+                        <div class="bet-duration">剩余7天</div>
+                    </div>
+                    <div class="bet-progress">
+                        <div class="progress-text">进度：21/28天（75%）</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 75%;"></div>
+                        </div>
+                    </div>
+                    <div class="bet-actions">
+                        <button class="action-btn join-btn">参与挑战</button>
+                        <button class="action-btn view-btn">查看详情</button>
+                    </div>
+                </div>
+
+                <!-- 赌约4 - 没有VIP -->
+                <div class="bet-item">
+                    <div class="bet-header">
+                        <div class="bet-avatar">
+                            陈
+                        </div>
+                        <div class="bet-info">
+                            <div class="bet-title">新人戒烟体验</div>
+                            <div class="bet-participants">发起人：陈明 • 参与人数：2人</div>
+                        </div>
+                    </div>
+                    <div class="bet-details">
+                        <div class="bet-amount">¥50</div>
+                        <div class="bet-duration">剩余3天</div>
+                    </div>
+                    <div class="bet-progress">
+                        <div class="progress-text">进度：4/7天（57%）</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 57%;"></div>
+                        </div>
+                    </div>
+                    <div class="bet-actions">
+                        <button class="action-btn join-btn">参与挑战</button>
+                        <button class="action-btn view-btn">查看详情</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 创建赌约按钮 -->
+        <button class="create-bet-btn" onclick="createBet()">+</button>
+
+        <!-- 底部导航 -->
+        <div class="nav-bar">
+            <div class="nav-item" onclick="goToPage('index.html')">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-text">首页</div>
+            </div>
+            <div class="nav-item" onclick="goToPage('group.html')">
+                <div class="nav-icon">👥</div>
+                <div class="nav-text">小组</div>
+            </div>
+            <div class="nav-item active" onclick="goToPage('bet.html')">
+                <div class="nav-icon">💰</div>
+                <div class="nav-text">赌约</div>
+            </div>
+            <div class="nav-item" onclick="goToPage('record.html')">
+                <div class="nav-icon">📊</div>
+                <div class="nav-text">记录</div>
+            </div>
+            <div class="nav-item" onclick="goToPage('profile.html')">
+                <div class="nav-icon">👤</div>
+                <div class="nav-text">我的</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        function createBet() {
+            alert('创建新赌约功能即将开放！');
+        }
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.bet-item');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                    el.style.transition = 'all 0.5s ease';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>

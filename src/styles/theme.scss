@@ -1,0 +1,23 @@
+/* 戒烟小程序 · 全局视觉 token */
+$color-primary: #1abc9c;
+$color-primary-dark: #16a085;
+$color-danger: #e74c3c;
+$color-warn: #f39c12;
+$color-bg: #f8f9fa;
+$color-text: #2c3e50;
+$color-text-sub: #5d6d7e;
+$color-mint-tint: rgba(26, 188, 156, 0.05);
+
+$card-radius: 32rpx;
+$card-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.05);
+
+@mixin card {
+  background: #fff;
+  border-radius: $card-radius;
+  box-shadow: $card-shadow;
+}
+
+@mixin focus-ring {
+  border-color: $color-primary !important;
+  box-shadow: 0 0 0 6rpx rgba(26, 188, 156, 0.2);
+}

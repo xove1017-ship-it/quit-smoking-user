@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戒烟小程序 - 首页</title>
+    <style>
+        /* 颜色规范定义 */
+        :root {
+            --primary-color: #1ABC9C; /* 青绿 */
+            --primary-dark: #2CAB8F; /* 稳重青绿 */
+            --accent-orange: #F39C12; /* 橙 */
+            --background-light: #F8F9FA; /* 浅灰 */
+            --white: #FFFFFF; /* 白 */
+            --text-dark: #2C3E50; /* 深灰 */
+            --text-gray: #5D6D7E; /* 岩灰 */
+            --success-green: #27AE60; /* 绿 */
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            --shadow-heavy: 0 4px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+            width: 375px;
+            height: 812px;
+            margin: 0 auto;
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            height: 44px;
+            background: transparent;
+            color: white;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        /* 顶部欢迎区 */
+        .welcome-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            height: 110px;
+            padding: 44px 20px 0 20px;
+            border-radius: 0 0 24px 24px;
+            color: white;
+            position: relative;
+        }
+
+        .welcome-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .welcome-text {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .day-tag {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .encouragement {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* 核心数据卡片 */
+        .data-card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 24px;
+            margin: -40px 20px 20px 20px;
+            box-shadow: var(--shadow-heavy);
+            text-align: center;
+            position: relative;
+            z-index: 100;
+        }
+
+        .streak-display {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .streak-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            line-height: 1;
+        }
+
+        .streak-unit {
+            font-size: 16px;
+            color: var(--text-gray);
+            margin-left: 4px;
+        }
+
+        .stats-info {
+            font-size: 14px;
+            color: var(--text-gray);
+            margin-bottom: 20px;
+        }
+
+        .milestone-progress {
+            margin-top: 16px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-bottom: 4px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--background-light);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 2px;
+            width: 10%;
+        }
+
+        /* 打卡按钮 */
+        .checkin-section {
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+
+        .checkin-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 48px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            height: 56px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(26, 188, 156, 0.3);
+        }
+
+        .checkin-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(26, 188, 156, 0.4);
+        }
+
+        /* 紧急干预按钮 - 与打卡按钮同等权重 */
+        .emergency-section {
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+
+        .emergency-btn {
+            background: var(--accent-orange);
+            color: white;
+            border: none;
+            border-radius: 48px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            height: 56px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+        }
+
+        .emergency-btn:hover {
+            background: #E67E22;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
+        }
+
+        .emergency-icon {
+            font-size: 20px;
+        }
+
+        /* 模块通用样式 */
+        .module {
+            margin-bottom: 24px;
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            margin-bottom: 12px;
+        }
+
+        .module-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .module-link {
+            font-size: 14px;
+            color: var(--text-gray);
+            cursor: pointer;
+        }
+
+        /* 横向滚动容器 */
+        .scroll-container {
+            padding: 0 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            cursor: grab;
+        }
+
+        .scroll-container:active {
+            cursor: grabbing;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scroll-content {
+            display: inline-flex;
+            gap: 12px;
+            padding: 8px 0;
+        }
+
+        /* 戒烟阶段卡片 */
+        .stage-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 16px;
+            min-width: 280px;
+            width: 280px;
+            box-shadow: var(--shadow);
+            display: inline-block;
+            white-space: normal;
+            flex-shrink: 0;
+        }
+
+        .stage-card.completed {
+            background: rgba(39, 174, 96, 0.1);
+            border-left: 4px solid var(--success-green);
+        }
+
+        .stage-card.current {
+            background: var(--background-light);
+            border-left: 4px solid var(--accent-orange);
+        }
+
+        .stage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .stage-days {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .stage-status {
+            font-size: 12px;
+            color: var(--success-green);
+        }
+
+        .stage-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .stage-details {
+            font-size: 12px;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+
+        .stage-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .progress-ring {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary-color) 100%, var(--background-light) 0%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* 赌约卡片 */
+        .bet-card {
+            background: var(--background-light);
+            border-radius: 16px;
+            padding: 12px;
+            min-width: 200px;
+            width: 200px;
+            box-shadow: var(--shadow);
+            display: inline-block;
+            white-space: normal;
+            flex-shrink: 0;
+        }
+
+        .bet-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .bet-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .bet-info {
+            flex: 1;
+        }
+
+        .bet-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .bet-time {
+            font-size: 12px;
+            color: var(--accent-orange);
+        }
+
+        .bet-status {
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-bottom: 4px;
+        }
+
+        .bet-stake {
+            font-size: 12px;
+            color: var(--text-gray);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+
+        /* 小组卡片 */
+        .group-card {
+            background: var(--background-light);
+            border-radius: 16px;
+            padding: 12px;
+            min-width: 200px;
+            width: 200px;
+            box-shadow: var(--shadow);
+            display: inline-block;
+            white-space: normal;
+            flex-shrink: 0;
+        }
+
+        .group-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .group-stats {
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-bottom: 8px;
+        }
+
+        .group-members {
+            display: flex;
+            gap: 4px;
+        }
+
+        .member-avatar {
+            width: 24px;
+            height: 24px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        /* 健康里程碑 */
+        .milestone-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 16px;
+            margin: 0 20px 80px 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .milestone-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .milestone-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-bottom: 12px;
+        }
+
+        .milestone-progress-bar {
+            height: 6px;
+            background: var(--background-light);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .milestone-progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 3px;
+            width: 42.8%; /* 3/7 */
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            max-width: 375px;
+            margin: 0 auto;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 模态框基础样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 300px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        /* 紧急干预模态框样式 */
+        .emergency-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .strategy-card {
+            background: var(--white);
+            border: 2px solid var(--background-light);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .strategy-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .strategy-card.selected {
+            border-color: var(--primary-color);
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .strategy-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .strategy-icon {
+            font-size: 20px;
+        }
+
+        .strategy-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .strategy-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-bottom: 8px;
+        }
+
+        .strategy-methods {
+            font-size: 11px;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+
+        .method-item {
+            margin-bottom: 2px;
+        }
+
+        /* 模态框按钮 */
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:disabled {
+            background: var(--text-gray);
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--background-light);
+            color: var(--text-gray);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 375px) {
+            body {
+                width: 100%;
+                height: 100vh;
+            }
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 顶部欢迎区 -->
+    <div class="welcome-section">
+        <div class="welcome-header">
+            <div class="welcome-text" id="greetingText">早安，李明</div>
+            <div class="day-tag">第3天</div>
+        </div>
+        <div class="encouragement">坚持3天，身体已经开始变化了！</div>
+    </div>
+
+    <!-- 核心数据卡片 -->
+    <div class="data-card fade-in">
+        <div class="streak-display">
+            <div class="streak-number">3</div>
+            <div class="streak-unit">天</div>
+        </div>
+        <div class="stats-info">累计戒烟3天 · 已节省¥36</div>
+        
+        <div class="milestone-progress">
+            <div class="progress-label">
+                <span>1天</span>
+                <span>30天</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 打卡按钮 -->
+    <div class="checkin-section">
+        <button class="checkin-btn">今日无烟打卡</button>
+    </div>
+
+    <!-- 紧急干预 -->
+    <div class="emergency-section">
+        <button class="emergency-btn" id="emergencyBtn">
+            <span class="emergency-icon">⚡</span>
+            想抽烟了？点我冷静一下
+            <span>→</span>
+        </button>
+    </div>
+
+    <!-- 戒烟阶段/身体变化模块 -->
+    <div class="module">
+        <div class="module-header">
+            <div class="module-title">🌱 你的身体正在变好</div>
+            <div class="module-title" style="font-size: 14px; color: var(--text-gray);">戒断第1阶段（3天）</div>
+        </div>
+        <div class="scroll-container">
+            <div class="scroll-content">
+                <!-- 已完成阶段 -->
+                <div class="stage-card completed">
+                    <div class="stage-header">
+                        <div class="stage-days">1天</div>
+                        <div class="stage-status">✓</div>
+                    </div>
+                    <div class="stage-title">一氧化碳水平下降</div>
+                </div>
+                
+                <!-- 当前阶段 -->
+                <div class="stage-card current">
+                    <div class="stage-header">
+                        <div class="stage-days">3天</div>
+                        <div class="stage-status" style="color: var(--accent-orange);">进行中</div>
+                    </div>
+                    <div class="stage-title">支气管放松</div>
+                    <div class="stage-details">
+                        呼吸变得更容易 · 肺活量开始增加 · 戒断症状（烦躁、头痛）达到峰值后开始缓解
+                    </div>
+                    <div class="stage-progress">
+                        <div class="progress-ring">100%</div>
+                        <div class="stage-details">今日完成</div>
+                    </div>
+                </div>
+                
+                <!-- 未来阶段示例 -->
+                <div class="stage-card">
+                    <div class="stage-header">
+                        <div class="stage-days">7天</div>
+                        <div class="stage-status" style="color: var(--text-gray);">即将到来</div>
+                    </div>
+                    <div class="stage-title">味觉和嗅觉改善</div>
+                    <div class="stage-details">
+                        食物味道更丰富 · 嗅觉敏感度提高 · 血液循环改善
+                    </div>
+                </div>
+                
+                <div class="stage-card">
+                    <div class="stage-header">
+                        <div class="stage-days">14天</div>
+                        <div class="stage-status" style="color: var(--text-gray);">即将到来</div>
+                    </div>
+                    <div class="stage-title">肺功能显著改善</div>
+                    <div class="stage-details">
+                        咳嗽减少 · 呼吸更顺畅 · 运动耐力提升
+                    </div>
+                </div>
+                
+                <div class="stage-card">
+                    <div class="stage-header">
+                        <div class="stage-days">30天</div>
+                        <div class="stage-status" style="color: var(--text-gray);">即将到来</div>
+                    </div>
+                    <div class="stage-title">心血管健康改善</div>
+                    <div class="stage-details">
+                        心脏病风险降低 · 血压恢复正常 · 皮肤状态改善
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 进行中的赌约 -->
+    <div class="module">
+        <div class="module-header">
+            <div class="module-title">🎯 进行中的赌约</div>
+            <div class="module-link" onclick="goToPage('bet-list.html')">查看全部</div>
+        </div>
+        <div class="scroll-container">
+            <div class="scroll-content">
+                <div class="bet-card" onclick="goToPage('bet-detail.html')">
+                    <div class="bet-header">
+                        <div class="bet-avatar">👤</div>
+                        <div class="bet-info">
+                            <div class="bet-name">单人挑战</div>
+                            <div class="bet-time">剩余7天</div>
+                        </div>
+                    </div>
+                    <div class="bet-status">进行中</div>
+                    <div class="bet-stake">奖励：新游戏</div>
+                </div>
+                
+                <div class="bet-card" onclick="goToPage('bet-detail.html')">
+                    <div class="bet-header">
+                        <div class="bet-avatar">👥</div>
+                        <div class="bet-info">
+                            <div class="bet-name">2人对决</div>
+                            <div class="bet-time">剩余3天</div>
+                        </div>
+                    </div>
+                    <div class="bet-status">领先中</div>
+                    <div class="bet-stake">赌注：50元</div>
+                </div>
+                
+                <div class="bet-card" onclick="goToPage('bet-detail.html')">
+                    <div class="bet-header">
+                        <div class="bet-avatar">👨‍👩‍👧</div>
+                        <div class="bet-info">
+                            <div class="bet-name">3人小组</div>
+                            <div class="bet-time">剩余14天</div>
+                        </div>
+                    </div>
+                    <div class="bet-status">团队协作</div>
+                    <div class="bet-stake">赌注：100元</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 戒烟小组 -->
+    <div class="module">
+        <div class="module-header">
+            <div class="module-title">👥 戒烟小组</div>
+            <div class="module-link" onclick="goToPage('group-list.html')">查看全部</div>
+        </div>
+        <div class="scroll-container">
+            <div class="scroll-content">
+                <div class="group-card" onclick="goToPage('group-list.html')">
+                    <div class="group-name">30天戒烟挑战</div>
+                    <div class="group-stats">12人 · 活跃</div>
+                    <div class="group-members">
+                        <div class="member-avatar">👤</div>
+                        <div class="member-avatar">👤</div>
+                        <div class="member-avatar">👤</div>
+                        <div class="member-avatar">+9</div>
+                    </div>
+                </div>
+                
+                <div class="group-card" onclick="goToPage('group-list.html')">
+                    <div class="group-name">办公室戒烟队</div>
+                    <div class="group-stats">8人 · 活跃</div>
+                    <div class="group-members">
+                        <div class="member-avatar">👤</div>
+                        <div class="member-avatar">👤</div>
+                        <div class="member-avatar">👤</div>
+                        <div class="member-avatar">+5</div>
+                    </div>
+                </div>
+                
+                <div class="group-card" onclick="goToPage('group-list.html')">
+                    <div class="group-name">老烟枪互助会</div>
+                    <div class="group-stats">25人 · 活跃</div>
+                    <div class="group-members">
+                        <div class="member-avatar">👤</div>
+                        <div class="member-avatar">👤</div>
+                        <div class="member-avatar">👤</div>
+                        <div class="member-avatar">+22</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 健康里程碑 -->
+    <div class="milestone-section fade-in">
+        <div class="milestone-title">🏆 健康里程碑</div>
+        <div class="milestone-desc">戒烟7天，你将获得以下健康改善：</div>
+        <div class="milestone-progress-bar">
+            <div class="milestone-progress-fill"></div>
+        </div>
+        <div style="font-size: 12px; color: var(--text-gray); margin-top: 8px;">
+            已达成：一氧化碳水平正常化 · 支气管放松
+        </div>
+    </div>
+
+    <!-- 紧急干预模态框 -->
+    <div class="modal" id="emergencyModal">
+        <div class="modal-content">
+            <div class="modal-title">选择应对策略</div>
+            <div class="emergency-options">
+                <div class="strategy-card" onclick="selectStrategy('distraction')">
+                    <div class="strategy-header">
+                        <div class="strategy-icon">🎮</div>
+                        <div class="strategy-title">转移注意力</div>
+                    </div>
+                    <div class="strategy-desc">通过其他活动分散注意力</div>
+                    <div class="strategy-methods">
+                        <div class="method-item">• 玩手机游戏</div>
+                        <div class="method-item">• 听音乐/播客</div>
+                        <div class="method-item">• 做家务/运动</div>
+                    </div>
+                </div>
+                
+                <div class="strategy-card" onclick="selectStrategy('relaxation')">
+                    <div class="strategy-header">
+                        <div class="strategy-icon">🧘</div>
+                        <div class="strategy-title">放松技巧</div>
+                    </div>
+                    <div class="strategy-desc">通过放松技巧缓解紧张</div>
+                    <div class="strategy-methods">
+                        <div class="method-item">• 深呼吸练习</div>
+                        <div class="method-item">• 冥想/正念</div>
+                        <div class="method-item">• 温水泡手</div>
+                    </div>
+                </div>
+                
+                <div class="strategy-card" onclick="selectStrategy('substitution')">
+                    <div class="strategy-header">
+                        <div class="strategy-icon">🍬</div>
+                        <div class="strategy-title">替代行为</div>
+                    </div>
+                    <div class="strategy-desc">用健康行为替代吸烟</div>
+                    <div class="strategy-methods">
+                        <div class="method-item">• 嚼口香糖</div>
+                        <div class="method-item">• 喝水/茶</div>
+                        <div class="method-item">• 吃水果/零食</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeEmergencyModal()">取消</button>
+                <button class="btn btn-primary" id="confirmBtn" disabled onclick="confirmStrategy()">开始应对</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 页面跳转函数
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        // 紧急干预模态框控制
+        const emergencyBtn = document.getElementById('emergencyBtn');
+        const emergencyModal = document.getElementById('emergencyModal');
+        const confirmBtn = document.getElementById('confirmBtn');
+        let selectedStrategy = null;
+
+        emergencyBtn.addEventListener('click', function() {
+            emergencyModal.style.display = 'flex';
+        });
+
+        function selectStrategy(strategy) {
+            // 移除所有选择状态
+            document.querySelectorAll('.strategy-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // 设置当前选择
+            event.currentTarget.classList.add('selected');
+            selectedStrategy = strategy;
+            confirmBtn.disabled = false;
+        }
+
+        function closeEmergencyModal() {
+            emergencyModal.style.display = 'none';
+            selectedStrategy = null;
+            confirmBtn.disabled = true;
+            document.querySelectorAll('.strategy-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+
+        function confirmStrategy() {
+            if (selectedStrategy) {
+                alert(`已选择 ${selectedStrategy} 策略，开始应对烟瘾！`);
+                closeEmergencyModal();
+            }
+        }
+
+        // 点击模态框背景关闭
+        emergencyModal.addEventListener('click', function(event) {
+            if (event.target === emergencyModal) {
+                closeEmergencyModal();
+            }
+        });
+
+        // 根据时间显示不同的问候语
+        function updateGreeting() {
+            const hour = new Date().getHours();
+            const greetingText = document.getElementById('greetingText');
+            let greeting = '早安，李明';
+            
+            if (hour >= 5 && hour < 12) {
+                greeting = '早安，李明';
+            } else if (hour >= 12 && hour < 18) {
+                greeting = '午安，李明';
+            } else {
+                greeting = '晚安，李明';
+            }
+            
+            greetingText.textContent = greeting;
+        }
+
+        // 页面加载时更新问候语
+        updateGreeting();
+
+        // 打卡按钮点击事件
+        document.querySelector('.checkin-btn').addEventListener('click', function() {
+            // 跳转到统一的打卡页面
+            window.location.href = 'checkin.html';
+        });
+    </script>
+</body>
+</html>

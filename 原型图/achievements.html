@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成就与勋章 - 戒烟小程序</title>
+    <style>
+        :root {
+            --primary-color: #1ABC9C;
+            --secondary-color: #16A085;
+            --white: #FFFFFF;
+            --text-dark: #333333;
+            --text-gray: #666666;
+            --border-color: #E0E0E0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #F5F5F5;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 100%;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .header {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 16px;
+        }
+
+        .achievement-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary-color);
+        }
+
+        .achievement-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .achievement-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .achievement-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(26, 188, 156, 0.1);
+        }
+
+        .achievement-content {
+            flex: 1;
+        }
+
+        .achievement-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .achievement-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .achievement-progress {
+            font-size: 12px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .medals-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .medal-collection {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .medal-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid;
+            width: 80px;
+        }
+
+        .medal-item.rainbow {
+            border-color: #FF6B6B;
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7);
+        }
+
+        .medal-item.gold {
+            border-color: #FFD700;
+            background: linear-gradient(45deg, #FFD700, #FFEC8B);
+        }
+
+        .medal-item.silver {
+            border-color: #C0C0C0;
+            background: linear-gradient(45deg, #C0C0C0, #E8E8E8);
+        }
+
+        .medal-icon {
+            font-size: 24px;
+        }
+
+        .medal-name {
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .medal-count {
+            font-size: 10px;
+            color: var(--text-gray);
+        }
+
+        .stats-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(26, 188, 156, 0.05);
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">←</button>
+            <div class="header-title">成就与勋章</div>
+        </div>
+
+        <div class="content">
+            <!-- 成就列表 -->
+            <div class="achievement-section">
+                <div class="section-title">🏆 戒烟成就</div>
+                <div class="achievement-list">
+                    <div class="achievement-item">
+                        <div class="achievement-icon">🔥</div>
+                        <div class="achievement-content">
+                            <div class="achievement-title">戒烟第一周</div>
+                            <div class="achievement-desc">连续7天控烟成功</div>
+                        </div>
+                        <div class="achievement-progress">已完成</div>
+                    </div>
+                    <div class="achievement-item">
+                        <div class="achievement-icon">💪</div>
+                        <div class="achievement-content">
+                            <div class="achievement-title">戒烟一个月</div>
+                            <div class="achievement-desc">连续30天控烟成功</div>
+                        </div>
+                        <div class="achievement-progress">已完成</div>
+                    </div>
+                    <div class="achievement-item">
+                        <div class="achievement-icon">🎯</div>
+                        <div class="achievement-content">
+                            <div class="achievement-title">戒烟三个月</div>
+                            <div class="achievement-desc">连续90天控烟成功</div>
+                        </div>
+                        <div class="achievement-progress">已完成</div>
+                    </div>
+                    <div class="achievement-item">
+                        <div class="achievement-icon">🌟</div>
+                        <div class="achievement-content">
+                            <div class="achievement-title">戒烟半年</div>
+                            <div class="achievement-desc">连续180天控烟成功</div>
+                        </div>
+                        <div class="achievement-progress">进行中</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 勋章展示 -->
+            <div class="medals-section">
+                <div class="section-title">🎖️ 我的勋章</div>
+                <div class="medal-collection">
+                    <div class="medal-item rainbow" onclick="goToPage('medals-intro.html')">
+                        <div class="medal-icon">✨</div>
+                        <div class="medal-name">五彩勋章</div>
+                        <div class="medal-count">1枚</div>
+                    </div>
+                    <div class="medal-item gold" onclick="goToPage('medals-intro.html')">
+                        <div class="medal-icon">🏆</div>
+                        <div class="medal-name">金勋章</div>
+                        <div class="medal-count">1枚</div>
+                    </div>
+                    <div class="medal-item silver" onclick="goToPage('medals-intro.html')">
+                        <div class="medal-icon">🏅</div>
+                        <div class="medal-name">银勋章</div>
+                        <div class="medal-count">5枚</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计数据 -->
+            <div class="stats-section">
+                <div class="section-title">📊 控烟统计</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">45天</div>
+                        <div class="stat-label">历史最长天数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">98%</div>
+                        <div class="stat-label">30天成功率</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">7</div>
+                        <div class="stat-label">完美周数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">2</div>
+                        <div class="stat-label">参与小组</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.achievement-section, .medals-section, .stats-section');
+            sections.forEach((section, index) => {
+                section.style.opacity = '0';
+                section.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    section.style.opacity = '1';
+                    section.style.transform = 'translateY(0)';
+                    section.style.transition = 'all 0.5s ease';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>

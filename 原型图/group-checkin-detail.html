@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打卡详情 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--text-gray);
+        }
+
+        /* 打卡统计 */
+        .checkin-stats {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .stats-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .group-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 24px;
+        }
+
+        .group-info {
+            flex: 1;
+        }
+
+        .group-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .today-date {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 16px;
+            background: var(--background-light);
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 打卡日历 */
+        .calendar-section {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .calendar-header {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-gray);
+            padding: 8px 0;
+        }
+
+        .calendar-day {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-day.checked {
+            background: var(--success-green);
+            color: var(--white);
+        }
+
+        .calendar-day.missed {
+            background: var(--error-red);
+            color: var(--white);
+        }
+
+        .calendar-day.today {
+            border: 2px solid var(--primary-color);
+        }
+
+        .calendar-day.future {
+            color: var(--text-gray);
+            background: var(--background-light);
+        }
+
+        /* 打卡成员 */
+        .members-section {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .members-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 16px;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .member-checkin-time {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .checkin-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .checkin-status.checked {
+            background: var(--success-green);
+            color: var(--white);
+        }
+
+        .checkin-status.pending {
+            background: var(--accent-orange);
+            color: var(--white);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <button class="back-btn" onclick="goBack()">← 返回</button>
+        <div class="page-title">打卡详情</div>
+        <button class="back-btn" onclick="refreshData()" style="font-size: 20px;">🔄</button>
+    </div>
+
+    <!-- 打卡统计 -->
+    <div class="checkin-stats fade-in">
+        <div class="stats-header">
+            <div class="group-icon">💪</div>
+            <div class="group-info">
+                <div class="group-name">戒烟互助群</div>
+                <div class="today-date" id="todayDate">2024年3月29日 星期五</div>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">12</div>
+                <div class="stat-label">今日打卡</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">28</div>
+                <div class="stat-label">总成员数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">42.8%</div>
+                <div class="stat-label">打卡率</div>
+            </div>
+        </div>
+        
+        <div class="stats-grid" style="margin-top: 12px;">
+            <div class="stat-item">
+                <div class="stat-value">11</div>
+                <div class="stat-label">成功控烟</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">1</div>
+                <div class="stat-label">没忍住</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">91.7%</div>
+                <div class="stat-label">成功率</div>
+            </div>
+        </div>
+        
+        <div class="progress-bar" style="height: 8px; background: #eee; border-radius: 4px; overflow: hidden;">
+            <div class="progress-fill" style="height: 100%; background: var(--primary-color); width: 42.8%;"></div>
+        </div>
+    </div>
+
+    <!-- 打卡日历 -->
+    <div class="calendar-section fade-in">
+        <div class="section-title">📅 本月打卡日历</div>
+        
+        <div class="calendar">
+            <div class="calendar-header">日</div>
+            <div class="calendar-header">一</div>
+            <div class="calendar-header">二</div>
+            <div class="calendar-header">三</div>
+            <div class="calendar-header">四</div>
+            <div class="calendar-header">五</div>
+            <div class="calendar-header">六</div>
+            
+            <!-- 空白日 -->
+            <div class="calendar-day future"></div>
+            <div class="calendar-day future"></div>
+            <div class="calendar-day future"></div>
+            <div class="calendar-day future"></div>
+            <div class="calendar-day future"></div>
+            
+            <!-- 3月1-31日 -->
+            <div class="calendar-day checked">1</div>
+            <div class="calendar-day checked">2</div>
+            <div class="calendar-day checked">3</div>
+            <div class="calendar-day checked">4</div>
+            <div class="calendar-day checked">5</div>
+            <div class="calendar-day checked">6</div>
+            <div class="calendar-day checked">7</div>
+            <div class="calendar-day checked">8</div>
+            <div class="calendar-day checked">9</div>
+            <div class="calendar-day checked">10</div>
+            <div class="calendar-day checked">11</div>
+            <div class="calendar-day checked">12</div>
+            <div class="calendar-day checked">13</div>
+            <div class="calendar-day checked">14</div>
+            <div class="calendar-day checked">15</div>
+            <div class="calendar-day checked">16</div>
+            <div class="calendar-day checked">17</div>
+            <div class="calendar-day checked">18</div>
+            <div class="calendar-day checked">19</div>
+            <div class="calendar-day checked">20</div>
+            <div class="calendar-day checked">21</div>
+            <div class="calendar-day checked">22</div>
+            <div class="calendar-day checked">23</div>
+            <div class="calendar-day checked">24</div>
+            <div class="calendar-day checked">25</div>
+            <div class="calendar-day checked">26</div>
+            <div class="calendar-day checked">27</div>
+            <div class="calendar-day checked">28</div>
+            <div class="calendar-day today">29</div>
+            <div class="calendar-day future">30</div>
+            <div class="calendar-day future">31</div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-gray);">
+            <div>✅ 已打卡  ❌ 未打卡  🔵 今日</div>
+            <div>本月打卡率：100%</div>
+        </div>
+    </div>
+
+    <!-- 打卡成员 -->
+    <div class="members-section fade-in">
+        <div class="section-title">👥 今日打卡成员</div>
+        
+        <div class="members-list">
+            <div class="member-item">
+                <div class="member-avatar">我</div>
+                <div class="member-info">
+                    <div class="member-name">李明</div>
+                    <div class="member-checkin-time">09:15 已打卡</div>
+                </div>
+                <div class="checkin-status checked">已打卡</div>
+            </div>
+            
+            <div class="member-item">
+                <div class="member-avatar">张</div>
+                <div class="member-info">
+                    <div class="member-name">张伟</div>
+                    <div class="member-checkin-time">08:30 已打卡</div>
+                </div>
+                <div class="checkin-status checked">已打卡</div>
+            </div>
+            
+            <div class="member-item">
+                <div class="member-avatar">王</div>
+                <div class="member-info">
+                    <div class="member-name">王强</div>
+                    <div class="member-checkin-time">10:20 已打卡</div>
+                </div>
+                <div class="checkin-status checked">已打卡</div>
+            </div>
+            
+            <div class="member-item">
+                <div class="member-avatar">李</div>
+                <div class="member-info">
+                    <div class="member-name">李华</div>
+                    <div class="member-checkin-time">-</div>
+                </div>
+                <div class="checkin-status pending">待打卡</div>
+            </div>
+            
+            <div class="member-item">
+                <div class="member-avatar">+9</div>
+                <div class="member-info">
+                    <div class="member-name">其他成员</div>
+                    <div class="member-checkin-time">共9人已打卡</div>
+                </div>
+                <div class="checkin-status checked">查看全部</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 返回上一页
+        function goBack() {
+            window.history.back();
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        // 刷新数据
+        function refreshData() {
+            alert('数据已刷新');
+            updateTodayDate();
+        }
+
+        // 更新今日日期
+        function updateTodayDate() {
+            const now = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                weekday: 'long' 
+            };
+            const dateString = now.toLocaleDateString('zh-CN', options);
+            document.getElementById('todayDate').textContent = dateString;
+        }
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTodayDate();
+        });
+    </script>
+</body>
+</html>

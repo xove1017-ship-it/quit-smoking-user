@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单人挑战详情 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--text-gray);
+        }
+
+        /* 挑战信息 */
+        .challenge-info {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .challenge-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .challenge-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .challenge-period {
+            font-size: 16px;
+            color: var(--text-gray);
+            margin-bottom: 16px;
+        }
+
+        .challenge-status {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--accent-orange);
+            color: var(--white);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* 进度统计 */
+        .progress-stats {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .stats-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            background: var(--background-light);
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 今日打卡 */
+        .today-checkin {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .checkin-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .checkin-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .checkin-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkin-btn.primary {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .checkin-btn.warning {
+            background: var(--error-red);
+            color: var(--white);
+        }
+
+        .checkin-btn:disabled {
+            background: var(--text-gray);
+            cursor: not-allowed;
+        }
+
+        .checkin-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        /* 奖励信息 */
+        .reward-info {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .reward-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .reward-content {
+            background: var(--background-light);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .reward-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent-orange);
+            margin-bottom: 8px;
+        }
+
+        .reward-description {
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        /* 时间线 */
+        .timeline-section {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .timeline-day {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .day-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--background-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-gray);
+        }
+
+        .day-number.current {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .day-status {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: var(--background-light);
+            border-radius: 6px;
+        }
+
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .status-icon.checked {
+            background: var(--success-green);
+            color: var(--white);
+        }
+
+        .status-icon.smoked {
+            background: var(--error-red);
+            color: var(--white);
+        }
+
+        .status-icon.pending {
+            background: var(--text-gray);
+            color: var(--white);
+        }
+
+        .day-time {
+            font-size: 10px;
+            color: var(--text-gray);
+        }
+
+        /* 操作按钮 */
+        .action-buttons {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.primary {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .action-btn.secondary {
+            background: var(--background-light);
+            color: var(--text-gray);
+        }
+
+        .action-btn.warning {
+            background: var(--error-red);
+            color: var(--white);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 300px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn.cancel {
+            background: var(--background-light);
+            color: var(--text-gray);
+        }
+
+        .modal-btn.confirm {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        /* 动画效果 */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <button class="back-btn" onclick="goBack()">← 返回</button>
+        <div class="page-title">单人挑战</div>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- 挑战信息 -->
+    <div class="challenge-info">
+        <div class="challenge-icon">💪</div>
+        <div class="challenge-title">自我挑战</div>
+        <div class="challenge-period">30天挑战 · 剩余12天</div>
+        <div class="challenge-status">进行中</div>
+    </div>
+
+    <!-- 进度统计 -->
+    <div class="progress-stats">
+        <div class="stats-title">挑战进度</div>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">18</div>
+                <div class="stat-label">已坚持天数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">85%</div>
+                <div class="stat-label">成功率</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">12</div>
+                <div class="stat-label">剩余天数</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 今日打卡 -->
+    <div class="today-checkin">
+        <div class="checkin-title">今日状态</div>
+        <div class="checkin-buttons">
+            <button class="checkin-btn primary" onclick="showCheckinModal()">今日无烟打卡</button>
+            <button class="checkin-btn warning" onclick="showSmokeModal()">记录吸烟</button>
+        </div>
+    </div>
+
+    <!-- 奖励信息 -->
+    <div class="reward-info">
+        <div class="reward-title">🎁 挑战奖励</div>
+        <div class="reward-content">
+            <div class="reward-text">买新游戏</div>
+            <div class="reward-description">完成30天挑战后即可获得</div>
+        </div>
+    </div>
+
+    <!-- 时间线 -->
+    <div class="timeline-section">
+        <div class="timeline-title">打卡时间线</div>
+        <div class="timeline">
+            <div class="timeline-day">
+                <div class="day-number current">19</div>
+                <div class="day-status">
+                    <div class="status-icon pending">?</div>
+                    <div class="day-time">今日</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">18</div>
+                <div class="day-status">
+                    <div class="status-icon checked">✓</div>
+                    <div class="day-time">昨天 18:30</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">17</div>
+                <div class="day-status">
+                    <div class="status-icon checked">✓</div>
+                    <div class="day-time">前天 19:15</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">16</div>
+                <div class="day-status">
+                    <div class="status-icon checked">✓</div>
+                    <div class="day-time">3天前 20:00</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">15</div>
+                <div class="day-status">
+                    <div class="status-icon smoked">✗</div>
+                    <div class="day-time">4天前 17:45</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">14</div>
+                <div class="day-status">
+                    <div class="status-icon checked">✓</div>
+                    <div class="day-time">5天前 18:20</div>
+                </div>
+            </div>
+            <div class="timeline-day">
+                <div class="day-number">13</div>
+                <div class="day-status">
+                    <div class="status-icon checked">✓</div>
+                    <div class="day-time">6天前 19:00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="action-buttons">
+        <button class="action-btn primary" onclick="claimReward()">提前领取奖励</button>
+        <button class="action-btn secondary" onclick="modifyChallenge()">修改挑战</button>
+        <button class="action-btn warning" onclick="cancelChallenge()">放弃挑战</button>
+    </div>
+
+    <!-- 打卡确认模态框 -->
+    <div class="modal" id="checkinModal">
+        <div class="modal-content">
+            <div class="modal-title">确认今日打卡</div>
+            <div style="margin-bottom: 20px; font-size: 14px; color: var(--text-gray);">
+                确认今日无烟状态吗？<br>
+                一旦确认将无法修改
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal('checkinModal')">取消</button>
+                <button class="modal-btn confirm" onclick="confirmCheckin()">确认打卡</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 吸烟记录模态框 -->
+    <div class="modal" id="smokeModal">
+        <div class="modal-content">
+            <div class="modal-title">记录吸烟情况</div>
+            <div style="margin-bottom: 20px; font-size: 14px; color: var(--text-gray);">
+                记录吸烟将影响挑战进度<br>
+                请如实填写
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal('smokeModal')">取消</button>
+                <button class="modal-btn confirm" onclick="confirmSmoke()">确认记录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 放弃挑战模态框 -->
+    <div class="modal" id="cancelModal">
+        <div class="modal-content">
+            <div class="modal-title">放弃挑战</div>
+            <div style="margin-bottom: 20px; font-size: 14px; color: var(--text-gray);">
+                确定要放弃本次挑战吗？<br>
+                放弃后将无法获得奖励
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal('cancelModal')">再想想</button>
+                <button class="modal-btn confirm" onclick="confirmCancel()">确认放弃</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index-new.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 模态框控制
+        function showCheckinModal() {
+            document.getElementById('checkinModal').style.display = 'flex';
+        }
+
+        function showSmokeModal() {
+            document.getElementById('smokeModal').style.display = 'flex';
+        }
+
+        function cancelChallenge() {
+            document.getElementById('cancelModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // 确认打卡
+        function confirmCheckin() {
+            const checkinBtn = document.querySelector('.checkin-btn.primary');
+            checkinBtn.textContent = '今日已打卡';
+            checkinBtn.disabled = true;
+            
+            // 更新时间线
+            const todayStatus = document.querySelector('.day-status');
+            todayStatus.innerHTML = `
+                <div class="status-icon checked">✓</div>
+                <div class="day-time">刚刚</div>
+            `;
+            
+            alert('今日无烟打卡成功！');
+            closeModal('checkinModal');
+        }
+
+        // 确认吸烟记录
+        function confirmSmoke() {
+            const smokeBtn = document.querySelector('.checkin-btn.warning');
+            smokeBtn.textContent = '今日已吸烟';
+            smokeBtn.disabled = true;
+            
+            // 更新时间线
+            const todayStatus = document.querySelector('.day-status');
+            todayStatus.innerHTML = `
+                <div class="status-icon smoked">✗</div>
+                <div class="day-time">刚刚</div>
+            `;
+            
+            alert('吸烟记录已提交，挑战进度将受影响');
+            closeModal('smokeModal');
+        }
+
+        // 确认放弃挑战
+        function confirmCancel() {
+            alert('挑战已放弃');
+            closeModal('cancelModal');
+            
+            // 返回赌约列表
+            setTimeout(() => {
+                window.location.href = 'bet-list.html';
+            }, 1000);
+        }
+
+        // 提前领取奖励
+        function claimReward() {
+            alert('提前领取奖励功能暂未开放，请完成挑战后领取');
+        }
+
+        // 修改挑战
+        function modifyChallenge() {
+            alert('修改挑战功能暂未开放');
+        }
+
+        // 返回上一页
+        function goBack() {
+            window.history.back();
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            if (page !== 'bet-detail-solo.html') {
+                window.location.href = page;
+            }
+        }
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // 点击模态框外部关闭
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

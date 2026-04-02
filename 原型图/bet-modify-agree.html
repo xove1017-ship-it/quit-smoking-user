@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>赌约修改确认 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--text-gray);
+        }
+
+        /* 修改信息 */
+        .modify-info {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .modify-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--accent-orange);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 32px;
+            margin: 0 auto 16px;
+        }
+
+        .modify-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .modify-desc {
+            font-size: 14px;
+            color: var(--text-gray);
+            margin-bottom: 20px;
+        }
+
+        /* 修改内容 */
+        .modify-content {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .content-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .change-item {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--background-light);
+            border-radius: 8px;
+        }
+
+        .change-label {
+            font-size: 14px;
+            color: var(--text-gray);
+            margin-bottom: 8px;
+        }
+
+        .change-comparison {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .change-from, .change-to {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .change-arrow {
+            width: 40px;
+            text-align: center;
+            color: var(--accent-orange);
+            font-size: 18px;
+        }
+
+        .change-value {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .change-from .change-value {
+            color: var(--error-red);
+            text-decoration: line-through;
+        }
+
+        .change-to .change-value {
+            color: var(--success-green);
+        }
+
+        /* 操作按钮 */
+        .action-buttons {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.primary {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .action-btn.secondary {
+            background: var(--background-light);
+            color: var(--text-gray);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 300px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn.cancel {
+            background: var(--background-light);
+            color: var(--text-gray);
+        }
+
+        .modal-btn.confirm {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        /* 动画效果 */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <button class="back-btn" onclick="goBack()">← 返回</button>
+        <div class="page-title">赌约修改确认</div>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- 修改信息 -->
+    <div class="modify-info">
+        <div class="modify-icon">✏️</div>
+        <div class="modify-name">李明</div>
+        <div class="modify-desc">请求修改赌约内容</div>
+    </div>
+
+    <!-- 修改内容 -->
+    <div class="modify-content">
+        <div class="content-title">📝 修改内容</div>
+        
+        <div class="change-item">
+            <div class="change-label">挑战周期</div>
+            <div class="change-comparison">
+                <div class="change-from">
+                    <div class="change-value">7天</div>
+                </div>
+                <div class="change-arrow">→</div>
+                <div class="change-to">
+                    <div class="change-value">10天</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="change-item">
+            <div class="change-label">口头约定</div>
+            <div class="change-comparison">
+                <div class="change-from">
+                    <div class="change-value">请吃饭</div>
+                </div>
+                <div class="change-arrow">→</div>
+                <div class="change-to">
+                    <div class="change-value">看电影</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="change-item">
+            <div class="change-label">新增见证人</div>
+            <div class="change-comparison">
+                <div class="change-from">
+                    <div class="change-value">2人</div>
+                </div>
+                <div class="change-arrow">→</div>
+                <div class="change-to">
+                    <div class="change-value">3人</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="action-buttons">
+        <button class="action-btn primary" onclick="acceptModify()">同意修改</button>
+        <button class="action-btn secondary" onclick="declineModify()">拒绝修改</button>
+    </div>
+
+    <!-- 接受确认模态框 -->
+    <div class="modal" id="acceptModal">
+        <div class="modal-content">
+            <div class="modal-title">确认同意修改</div>
+            <div style="margin-bottom: 20px; font-size: 14px; color: var(--text-gray);">
+                同意后赌约内容将立即更新<br>
+                确认同意这些修改吗？
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal('acceptModal')">再想想</button>
+                <button class="modal-btn confirm" onclick="confirmAccept()">确认同意</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 拒绝确认模态框 -->
+    <div class="modal" id="declineModal">
+        <div class="modal-content">
+            <div class="modal-title">确认拒绝修改</div>
+            <div style="margin-bottom: 20px; font-size: 14px; color: var(--text-gray);">
+                拒绝后赌约将保持原样<br>
+                确定要拒绝这些修改吗？
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal('declineModal')">再想想</button>
+                <button class="modal-btn confirm" onclick="confirmDecline()">确认拒绝</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        // 页面跳转
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        // 同意修改
+        function acceptModify() {
+            document.getElementById('acceptModal').style.display = 'flex';
+        }
+
+        // 拒绝修改
+        function declineModify() {
+            document.getElementById('declineModal').style.display = 'flex';
+        }
+
+        // 确认接受
+        function confirmAccept() {
+            alert('修改已确认！赌约内容已更新');
+            closeModal('acceptModal');
+            // 跳转到赌约详情页面
+            setTimeout(() => {
+                window.location.href = 'bet-detail.html';
+            }, 1000);
+        }
+
+        // 确认拒绝
+        function confirmDecline() {
+            alert('修改已拒绝，赌约保持原样');
+            closeModal('declineModal');
+            // 返回首页
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        }
+
+        // 关闭模态框
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // 点击模态框背景关闭
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建小组 - 戒烟小程序</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1ABC9C;
+            --accent-orange: #F39C12;
+            --text-dark: #2C3E50;
+            --text-gray: #5D6D7E;
+            --background-light: #F8F9FA;
+            --white: #FFFFFF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* 沉浸式状态栏 */
+        .status-bar {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--white);
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--text-gray);
+        }
+
+        .create-btn {
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .create-btn:disabled {
+            background: var(--text-gray);
+            cursor: not-allowed;
+        }
+
+        /* 创建表单 */
+        .create-form {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-gray);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .icon-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .icon-option {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--background-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .icon-option:hover {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .icon-option.selected {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .privacy-options {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .privacy-option {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .privacy-option:hover {
+            border-color: var(--primary-color);
+        }
+
+        .privacy-option.selected {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .privacy-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .privacy-desc {
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            border-top: 1px solid #eee;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+            color: var(--text-gray);
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            font-weight: 300;
+        }
+
+        .nav-text {
+            font-size: 10px;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- 沉浸式状态栏 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div>📶 100% 🔋</div>
+    </div>
+
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <button class="back-btn" onclick="goBack()">← 返回</button>
+        <div class="page-title">创建小组</div>
+        <button class="create-btn" id="createBtn" onclick="createGroup()" disabled>创建</button>
+    </div>
+
+    <!-- 创建表单 -->
+    <div class="create-form fade-in">
+        <!-- 小组基本信息 -->
+        <div class="form-section">
+            <div class="section-title">📋 小组基本信息</div>
+            
+            <div class="form-group">
+                <label class="form-label">小组名称</label>
+                <input type="text" class="form-input" id="groupName" placeholder="例如：戒烟互助群" maxlength="20">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">小组图标</label>
+                <div class="icon-options">
+                    <div class="icon-option" onclick="selectIcon('💪')">💪</div>
+                    <div class="icon-option" onclick="selectIcon('🏆')">🏆</div>
+                    <div class="icon-option" onclick="selectIcon('🚭')">🚭</div>
+                    <div class="icon-option" onclick="selectIcon('🌱')">🌱</div>
+                    <div class="icon-option" onclick="selectIcon('💚')">💚</div>
+                    <div class="icon-option" onclick="selectIcon('🌟')">🌟</div>
+                    <div class="icon-option" onclick="selectIcon('🔥')">🔥</div>
+                    <div class="icon-option" onclick="selectIcon('🌈')">🌈</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">小组描述</label>
+                <textarea class="form-textarea" id="groupDescription" placeholder="请简单描述小组的宗旨和目标..."></textarea>
+            </div>
+        </div>
+
+        <!-- 小组设置 -->
+        <div class="form-section">
+            <div class="section-title">⚙️ 小组设置</div>
+            
+            <div class="form-group">
+                <label class="form-label">隐私设置</label>
+                <div class="privacy-options">
+                    <div class="privacy-option" onclick="selectPrivacy('public')">
+                        <div class="privacy-title">公开小组</div>
+                        <div class="privacy-desc">任何人都可加入</div>
+                    </div>
+                    <div class="privacy-option" onclick="selectPrivacy('private')">
+                        <div class="privacy-title">私密小组</div>
+                        <div class="privacy-desc">需要邀请加入</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">最大成员数</label>
+                <select class="form-input" id="maxMembers">
+                    <option value="20">20人</option>
+                    <option value="50" selected>50人</option>
+                    <option value="100">100人</option>
+                    <option value="200">200人</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">打卡要求</label>
+                <select class="form-input" id="checkinRequirement">
+                    <option value="optional">自愿打卡</option>
+                    <option value="daily" selected>每日打卡</option>
+                    <option value="weekly">每周打卡</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 邀请成员 -->
+        <div class="form-section">
+            <div class="section-title">👥 邀请初始成员</div>
+            
+            <div class="form-group">
+                <label class="form-label">邀请好友</label>
+                <input type="text" class="form-input" id="inviteFriends" placeholder="输入好友用户名，多个用逗号分隔">
+            </div>
+            
+            <div class="form-group" style="font-size: 12px; color: var(--text-gray);">
+                注：创建小组后，您将成为小组管理员，可以管理成员和设置
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="goToPage('index.html')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">首页</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('bet-list.html')">
+            <div class="nav-icon">🎯</div>
+            <div class="nav-text">赌约</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('group-list.html')">
+            <div class="nav-icon">👥</div>
+            <div class="nav-text">小组</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('record.html')">
+            <div class="nav-icon">📊</div>
+            <div class="nav-text">记录</div>
+        </div>
+        <div class="nav-item" onclick="goToPage('profile.html')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-text">我的</div>
+        </div>
+    </div>
+
+    <script>
+        let selectedIcon = '💪';
+        let selectedPrivacy = 'public';
+
+        // 返回上一页
+        function goBack() {
+            window.history.back();
+        }
+
+        // 页面跳转
+        function goToPage(page) {
+            window.location.href = page;
+        }
+
+        // 选择图标
+        function selectIcon(icon) {
+            selectedIcon = icon;
+            
+            // 移除所有选择状态
+            document.querySelectorAll('.icon-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // 设置当前选择
+            event.target.classList.add('selected');
+            validateForm();
+        }
+
+        // 选择隐私设置
+        function selectPrivacy(privacy) {
+            selectedPrivacy = privacy;
+            
+            // 移除所有选择状态
+            document.querySelectorAll('.privacy-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // 设置当前选择
+            event.target.classList.add('selected');
+            validateForm();
+        }
+
+        // 验证表单
+        function validateForm() {
+            const groupName = document.getElementById('groupName').value.trim();
+            const groupDescription = document.getElementById('groupDescription').value.trim();
+            const createBtn = document.getElementById('createBtn');
+            
+            if (groupName && groupDescription && selectedIcon && selectedPrivacy) {
+                createBtn.disabled = false;
+            } else {
+                createBtn.disabled = true;
+            }
+        }
+
+        // 创建小组
+        function createGroup() {
+            const groupName = document.getElementById('groupName').value.trim();
+            const groupDescription = document.getElementById('groupDescription').value.trim();
+            const maxMembers = document.getElementById('maxMembers').value;
+            const checkinRequirement = document.getElementById('checkinRequirement').value;
+            
+            // 验证输入
+            if (!groupName) {
+                alert('请输入小组名称');
+                return;
+            }
+            
+            if (!groupDescription) {
+                alert('请输入小组描述');
+                return;
+            }
+            
+            alert(`小组"${groupName}"创建成功！`);
+            
+            // 跳转到小组详情页面
+            setTimeout(() => {
+                window.location.href = 'group-detail.html';
+            }, 1000);
+        }
+
+        // 实时验证表单
+        document.getElementById('groupName').addEventListener('input', validateForm);
+        document.getElementById('groupDescription').addEventListener('input', validateForm);
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 默认选择第一个图标
+            document.querySelector('.icon-option').click();
+            // 默认选择公开小组
+            document.querySelector('.privacy-option').click();
+        });
+
+        // 底部导航交互
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
