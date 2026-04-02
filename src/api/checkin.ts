@@ -14,13 +14,22 @@ export interface CheckinTodayData {
 	active_bets_today?: number
 }
 
-/** GET /quit/record/stats（节选），打卡页底部「今日统计」 */
+/** GET /quit/record/stats（节选），打卡页底部「今日统计」与记录页 */
 export interface RecordStatsData {
 	streak_days?: number
+	max_historical_streak?: number
+	total_smoke_free?: number
+	relapse_days?: number
 	success_rate_30_days?: number | string
+	success_rate?: number | string
 	perfect_weeks?: number
 	joined_group_count?: number
 	joined_bet_count?: number
+	money_saved_yuan?: number | string
+	cigarettes_avoided?: number
+	life_minutes_recovered?: number
+	/** 每日是否有打卡、是否无烟，见 module-profile-checkin-record.md */
+	trend_15days?: Array<Record<string, unknown>>
 }
 
 export interface CheckinSubmitResult {

@@ -78,7 +78,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { onShow } from "@dcloudio/uni-app";
-import { isLoggedIn, setLoginSession } from "../../utils/auth";
+import { isLoggedIn, parseLoginPayload, setLoginSession } from "../../utils/auth";
+import api from "@/utils/api";
 
 const f1 = "每日打卡\n记录无烟天数";
 const f2 = "戒烟赌约\n与好友PK";
@@ -124,6 +125,18 @@ function finishLogin(token: string, extra?: Record<string, unknown>) {
   }, 400);
 }
 
+function applyWxLoginData(raw: Record<string, unknown>) {
+  const { token, userInfo, session } = parseLoginPayload(raw);
+  if (!token) {
+    uni.showToast({ title: "未获取到登录凭证，请重试", icon: "none" });
+    return;
+  }
+  finishLogin(token, {
+    userInfo: userInfo ?? raw.userInfo,
+    session,
+  });
+}
+
 function onWechatLogin() {
   if (!agreed.value) {
     uni.showToast({ title: "请先同意用户协议和隐私政策", icon: "none" });
@@ -136,18 +149,24 @@ function onWechatLogin() {
   uni.login({
     provider: "weixin",
     success: (res) => {
-      if (res.code) {
-        // 生产环境：将 res.code 发往服务端换取 session / token
-        finishLogin(`wx_${res.code}`, { wxCode: res.code });
-      } else {
+      if (!res.code) {
         uni.showToast({ title: "未获取到登录凭证", icon: "none" });
+        loading.value = false;
+        return;
       }
+      api
+        .wxLogin(res.code)
+        .then((r) => applyWxLoginData((r.data || {}) as Record<string, unknown>))
+        .catch(() => {
+          /* request 已 toast */
+        })
+        .finally(() => {
+          loading.value = false;
+        });
     },
     fail: (err) => {
       console.error(err);
       uni.showToast({ title: "微信登录失败", icon: "none" });
-    },
-    complete: () => {
       loading.value = false;
     },
   });
@@ -274,12 +293,13 @@ function onWechatLogin() {
 }
 
 .policy-content {
-  max-height: 240rpx;
+  max-height: 200rpx;
   margin-bottom: 24rpx;
   padding: 24rpx;
   background: $color-bg;
   border-radius: 16rpx;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .policy-text {

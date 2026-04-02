@@ -56,7 +56,7 @@
         <text class="reward-title">🎁 挑战奖励</text>
         <view class="reward-content">
           <text class="reward-text">{{ stakeLine || '自定义奖励' }}</text>
-          <text class="reward-description">完成挑战后即可兑现约定</text>
+          <text class="reward-description">{{ rewardSubtext }}</text>
         </view>
         <button v-if="canClaimReward" class="claim-btn" @click="doClaimReward">领取奖励</button>
       </view>
@@ -65,8 +65,8 @@
         <text class="timeline-title">打卡时间线</text>
         <view v-if="timelineRows.length === 0" class="hint sm">暂无时间线</view>
         <view v-for="(row, i) in timelineRows" :key="i" class="timeline-day">
-          <view class="day-number" :class="{ current: i === 0 }">
-            <text>{{ i + 1 }}</text>
+          <view class="day-number" :class="{ current: row.isToday }">
+            <text>{{ row.dayIndex }}</text>
           </view>
           <view class="day-status">
             <view
@@ -75,7 +75,7 @@
             >
               <text>{{ soloRowIcon(row) }}</text>
             </view>
-            <text class="day-time">{{ row.label }}</text>
+            <text class="day-time">{{ row.dateKey || row.label }}</text>
           </view>
         </view>
       </view>
@@ -104,6 +104,7 @@ const {
   successRateText,
   remainDaysText,
   canClaimReward,
+  rewardSubtext,
   initRoute,
   confirmCheckin,
   confirmAbandon,
@@ -113,14 +114,14 @@ const {
 
 initRoute()
 
-function soloRowClass(row: { cells: boolean[] }) {
+function soloRowClass(row: { cells: Array<boolean | null> }) {
   const ok = row.cells[0]
   if (ok === true) return 'checked'
   if (ok === false) return 'smoked'
   return 'pending'
 }
 
-function soloRowIcon(row: { cells: boolean[] }) {
+function soloRowIcon(row: { cells: Array<boolean | null> }) {
   const ok = row.cells[0]
   if (ok === true) return sym.value.check
   if (ok === false) return sym.value.cross

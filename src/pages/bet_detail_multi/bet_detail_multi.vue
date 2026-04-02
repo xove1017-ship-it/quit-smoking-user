@@ -99,7 +99,7 @@
         <text class="timeline-title">📅 打卡时间线</text>
         <view v-if="timelineRows.length === 0" class="hint sm">暂无时间线</view>
         <view v-else class="timeline-header">
-          <text class="day-label">天数</text>
+          <text class="day-label">第几天</text>
           <view class="participant-labels">
             <text
               v-for="(lab, li) in timelineColumnLabels"
@@ -110,7 +110,7 @@
           <text class="time-label">状态</text>
         </view>
         <view v-for="(row, ri) in timelineRows" :key="ri" class="timeline-day">
-          <text class="day-number" :class="{ current: ri === 0 }">{{ row.label }}</text>
+          <text class="day-number" :class="{ current: row.isToday }">{{ row.dayIndex }}</text>
           <view class="day-status">
             <view class="status-icons">
               <view
@@ -123,7 +123,7 @@
               </view>
             </view>
           </view>
-          <text class="day-time"> </text>
+          <text class="day-time">{{ row.dateKey || row.label }}</text>
         </view>
       </view>
 

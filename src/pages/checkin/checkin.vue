@@ -66,8 +66,15 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import checkinApi, { type CheckinTodayData, type RecordStatsData } from '@/api/checkin'
+
+/** 首页「记录吸烟」传入 preset=smoke，预选「没忍住」（对应全局 FAILED） */
+const presetSmoke = ref(false)
+
+onLoad((q?: Record<string, string>) => {
+  presetSmoke.value = q?.preset === 'smoke' || q?.smoke === '1'
+})
 
 const selectedOption = ref<'success' | 'warning' | null>(null)
 const currentDateText = ref('')
@@ -166,6 +173,14 @@ async function loadPageData() {
     ])
     applyToday(todayRes.data || {})
     applyRecordStats(statsRes.data || {})
+    if (
+      presetSmoke.value &&
+      !hasCheckin.value &&
+      !locked.value
+    ) {
+      selectedOption.value = 'warning'
+      presetSmoke.value = false
+    }
   } finally {
     uni.hideLoading()
     pageLoading.value = false

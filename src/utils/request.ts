@@ -1,6 +1,6 @@
 // src/utils/request.ts
 import config from '@/config/env'
-import { getToken, clearLoginSession } from '@/utils/auth'
+import { getToken, clearLoginSession, waitForAuthBootstrap } from '@/utils/auth'
 
 // 1. 基础配置
 const BASE_URL = config.basePath;
@@ -13,21 +13,30 @@ export interface ApiResponse<T = any> {
   time?: number;
 }
 
+function isNoAuthUrl(url: string): boolean {
+  return url.includes('/quit/wxlogin/login');
+}
+
 // 2. 核心请求函数
 const request = <T = any>(options: UniApp.RequestOptions): Promise<ApiResponse<T>> => {
   return new Promise((resolve, reject) => {
-    const token = getToken() || '12a86e9c-6f55-4683-bda5-04dc27337873';
+    const fullUrl = options.url.startsWith('http') ? options.url : BASE_URL + options.url;
+    const run = () => {
+    const token = getToken() || '08b01656-b2fc-476f-b2ae-78ef2abee2ac';
+    const headers: Record<string, string> = {
+      server: '1',
+      ...options.header as Record<string, string>,
+    };
+    if (!isNoAuthUrl(fullUrl) && token) {
+      headers['ba-user-token'] = token;
+    }
 
     uni.request({
       // 拼接完整 URL
-      url: options.url.startsWith('http') ? options.url : BASE_URL + options.url,
+      url: fullUrl,
       method: options.method || 'GET',
       data: options.data,
-      header: {
-        'server': '1',
-        'ba-user-token': token,
-        ...options.header
-      },
+      header: headers,
       success: (response) => {
         // HTTP 状态码判断
         if (response.statusCode === 200) {
@@ -44,7 +53,7 @@ const request = <T = any>(options: UniApp.RequestOptions): Promise<ApiResponse<T
               uni.showToast({ title: '登录已过期，请重新登录', icon: 'none' });
               // 延迟跳转，给用户看提示的时间
               setTimeout(() => {
-                uni.reLaunch({ url: '/pages/login/wxLogin' });
+                uni.reLaunch({ url: '/pages/login/login' });
               }, 1500);
             } else if (res.code === 2 || res.code === 3 || res.code === 4 || res.code == 6) {
               // 下单出错 单独判断
@@ -68,6 +77,13 @@ const request = <T = any>(options: UniApp.RequestOptions): Promise<ApiResponse<T
         reject(err);
       }
     });
+    };
+
+    if (isNoAuthUrl(fullUrl)) {
+      run();
+    } else {
+      waitForAuthBootstrap().then(run, reject);
+    }
   });
 };
 

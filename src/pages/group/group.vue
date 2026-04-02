@@ -101,7 +101,10 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import AppTabBar from '../../components/AppTabBar.vue'
+import groupApi from '@/api/group'
 
 interface GroupItem {
   id: string
@@ -115,66 +118,49 @@ interface GroupItem {
   newMsg: number | string
 }
 
-const joined: GroupItem[] = [
-  {
-    id: '1',
-    name: '戒烟互助群',
-    icon: '💪',
-    memberCount: 28,
-    status: '活跃',
-    description: '互相监督，共同戒烟！每天分享戒烟心得，互相鼓励支持。',
-    rate: '85%',
-    todayCheckin: 12,
-    newMsg: 3,
-  },
-  {
-    id: '2',
-    name: '30天挑战营',
-    icon: '🏆',
-    memberCount: 15,
-    status: '进行中',
-    description: '30天无烟挑战，坚持就是胜利！完成挑战可获得专属勋章。',
-    rate: '78%',
-    todayCheckin: 8,
-    newMsg: 0,
-  },
-  {
-    id: '3',
-    name: '老烟枪互助会',
-    icon: '🚭',
-    memberCount: 42,
-    status: '活跃',
-    description: '专为长期吸烟者设立的互助小组，分享戒烟经验，共同克服烟瘾。',
-    rate: '65%',
-    todayCheckin: 18,
-    newMsg: 5,
-  },
-]
+function mapRow(raw: Record<string, unknown>, isJoined: boolean): GroupItem {
+  return {
+    id: String(raw.id ?? ''),
+    name: String(raw.name ?? raw.title ?? '小组'),
+    icon: '👥',
+    memberCount: Number(raw.member_count ?? raw.members ?? raw.memberCount ?? 0),
+    status: isJoined ? '已加入' : '可加入',
+    description: String(raw.description ?? raw.desc ?? ''),
+    rate: raw.rate != null ? String(raw.rate) : '—',
+    todayCheckin: Number(raw.today_checkin ?? raw.todayCheckin ?? 0),
+    newMsg: '-',
+  }
+}
 
-const recommended: GroupItem[] = [
-  {
-    id: 'r1',
-    name: '新手戒烟营',
-    icon: '🌱',
-    memberCount: 23,
-    status: '可加入',
-    description: '专为戒烟新手设计，从零开始学习戒烟技巧，轻松度过戒断期。',
-    rate: '92%',
-    todayCheckin: 15,
-    newMsg: '-',
-  },
-  {
-    id: 'r2',
-    name: '健康生活圈',
-    icon: '💚',
-    memberCount: 56,
-    status: '可加入',
-    description: '不仅仅是戒烟，更是健康生活方式的转变。分享运动、饮食、心理健康。',
-    rate: '88%',
-    todayCheckin: 22,
-    newMsg: '-',
-  },
-]
+const joined = ref<GroupItem[]>([])
+const recommended = ref<GroupItem[]>([])
+const loading = ref(false)
+
+function loadGroups() {
+  loading.value = true
+  groupApi
+    .index({ page: 1, limit: 50 })
+    .then((res) => {
+      const list = (res.data as { list?: Record<string, unknown>[] })?.list || []
+      const j: GroupItem[] = []
+      const r: GroupItem[] = []
+      for (const raw of list) {
+        const isJ = !!(raw.joined ?? raw.is_joined ?? raw.is_member ?? raw.my_joined)
+        const row = mapRow(raw, isJ)
+        if (isJ) j.push(row)
+        else r.push(row)
+      }
+      joined.value = j
+      recommended.value = r
+    })
+    .finally(() => {
+      loading.value = false
+    })
+}
+
+onShow(() => {
+  loadGroups()
+})
 
 function goCreate() {
   uni.navigateTo({ url: '/pages/group-create/group-create' })
@@ -190,9 +176,14 @@ function joinGroup(g: GroupItem) {
     title: '加入小组',
     content: `确定要加入「${g.name}」吗？`,
     success(res) {
-      if (res.confirm) {
-        uni.showToast({ title: `已加入${g.name}`, icon: 'success' })
-      }
+      if (!res.confirm) return
+      groupApi
+        .join(g.id)
+        .then(() => {
+          uni.showToast({ title: '加入成功', icon: 'success' })
+          loadGroups()
+        })
+        .catch(() => {})
     },
   })
 }

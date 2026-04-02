@@ -5,10 +5,11 @@
       <view class="user-card">
         <view class="user-avatar-wrap">
           <view class="user-avatar">
-            <text class="avatar-emoji">👤</text>
+            <image v-if="avatarUrl" class="avatar-img" :src="avatarUrl" mode="aspectFill" />
+            <text v-else class="avatar-emoji">👤</text>
           </view>
-          <view class="vip-badge rainbow">
-            <text class="vip-txt">完美</text>
+          <view class="vip-badge" :class="vipClass">
+            <text class="vip-txt">{{ vipLabel }}</text>
           </view>
         </view>
 
@@ -20,7 +21,7 @@
         </view>
 
         <view class="user-level">
-          <text>🏆 戒烟达人</text>
+          <text>🏆 {{ levelTitle }}</text>
         </view>
 
         <view class="medals-section">
@@ -34,7 +35,8 @@
                 :class="m.tier"
                 @tap="goAchievements"
               >
-                <text class="medal-icon">{{ m.icon }}</text>
+                <image v-if="m.image" class="medal-img" :src="m.image" mode="aspectFit" />
+                <text v-else class="medal-icon">{{ m.icon }}</text>
               </view>
             </view>
           </scroll-view>
@@ -118,6 +120,22 @@
     <AppTabBar :active="4" />
 
     <!-- 修改昵称（替代原型的 prompt） -->
+    <view v-if="feedbackVisible" class="nick-mask" @tap="closeFeedback">
+      <view class="nick-dialog" @tap.stop>
+        <text class="nick-dialog-title">意见反馈</text>
+        <textarea
+          v-model="feedbackDraft"
+          class="feedback-area"
+          placeholder="请描述问题或建议（2–2000字）"
+          maxlength="2000"
+        />
+        <view class="nick-actions">
+          <button class="nick-btn cancel" @tap="closeFeedback">取消</button>
+          <button class="nick-btn ok" @tap="submitFeedback">提交</button>
+        </view>
+      </view>
+    </view>
+
     <view v-if="nickEditVisible" class="nick-mask" @tap="closeNickEdit">
       <view class="nick-dialog" @tap.stop>
         <text class="nick-dialog-title">修改昵称</text>
@@ -142,35 +160,83 @@ import { ref } from "vue";
 import { onShow } from "@dcloudio/uni-app";
 import AppTabBar from "../../components/AppTabBar.vue";
 import { clearLoginSession } from "../../utils/auth";
+import api from "@/utils/api";
 
 const NICK_KEY = "profile_display_name";
 
 const defaultName = "戒烟小能手";
 const displayName = ref(defaultName);
+const avatarUrl = ref("");
+const vipLabel = ref("会员");
+const vipClass = ref("silver");
+const levelTitle = ref("戒烟路上，与你同行");
+const medals = ref<{ icon: string; tier: string; image?: string }[]>([
+  { icon: "🏅", tier: "silver" },
+]);
+const medalProgressHint = ref("加载成就数据中…");
+const medalProgressPct = ref(0);
 
 const nickEditVisible = ref(false);
 const nickDraft = ref("");
+const feedbackVisible = ref(false);
+const feedbackDraft = ref("");
 
-const medals = [
-  { icon: "✨", tier: "rainbow" },
-  { icon: "🏆", tier: "gold" },
-  { icon: "🏅", tier: "silver" },
-  { icon: "🏅", tier: "silver" },
-  { icon: "🏅", tier: "silver" },
-  { icon: "🏅", tier: "silver" },
-  { icon: "🏅", tier: "silver" },
-];
+function tierToClass(tier: string): string {
+  if (tier === "rainbow") return "rainbow";
+  if (tier === "gold") return "gold";
+  if (tier === "silver") return "silver";
+  return "silver";
+}
 
-const medalProgressHint = "再获得 5 枚银勋章可升级为金勋章";
-const medalProgressPct = 50;
-
-function loadNickname() {
+function loadProfileData() {
   const saved = uni.getStorageSync(NICK_KEY) as string | undefined;
   if (saved) displayName.value = saved;
+
+  Promise.all([api.userProfile(), api.achievementIndex()])
+    .then(([userRes, achRes]) => {
+      const u = (userRes.data || {}) as Record<string, unknown>;
+      if (u.nickname) displayName.value = String(u.nickname);
+      if (u.avatar) avatarUrl.value = String(u.avatar);
+      const vl = String(u.vip_level ?? "none");
+      vipLabel.value =
+        vl === "rainbow"
+          ? "彩虹"
+          : vl === "gold"
+            ? "黄金"
+            : vl === "silver"
+              ? "白银"
+              : "会员";
+      vipClass.value = tierToClass(vl === "none" ? "silver" : vl);
+
+      const ad = (achRes.data || {}) as Record<string, unknown>;
+      const list = (ad.medals as Record<string, unknown>[]) || [];
+      const nextPct = Number(ad.next_milestone_progress_percent ?? 0);
+      medalProgressPct.value = Math.min(
+        100,
+        Math.max(0, Number.isFinite(nextPct) ? nextPct : 0),
+      );
+      const nm = ad.next_milestone as Record<string, unknown> | undefined;
+      medalProgressHint.value = nm
+        ? `下一里程碑：${nm.title ?? nm.name ?? "继续加油"}`
+        : "坚持打卡解锁更多勋章";
+
+      if (list.length) {
+        medals.value = list.slice(0, 12).map((m) => {
+          const tier = String(m.tier ?? "silver");
+          const unlocked = !!(m.unlocked ?? m.is_unlocked ?? true);
+          return {
+            icon: unlocked ? "🏅" : "🔒",
+            tier: unlocked ? tierToClass(tier) : "silver",
+            image: typeof m.image === "string" ? m.image : undefined,
+          };
+        });
+      }
+    })
+    .catch(() => {});
 }
 
 onShow(() => {
-  loadNickname();
+  loadProfileData();
 });
 
 function go(url: string) {
@@ -203,11 +269,27 @@ function saveNickname() {
 }
 
 function onHelp() {
-  uni.showModal({
-    title: "帮助与反馈",
-    content: "如有问题请联系邮箱 support@jieyan.com 或拨打客服 400-123-4567。",
-    showCancel: false,
-  });
+  feedbackDraft.value = "";
+  feedbackVisible.value = true;
+}
+
+function closeFeedback() {
+  feedbackVisible.value = false;
+}
+
+function submitFeedback() {
+  const content = feedbackDraft.value.trim();
+  if (content.length < 2) {
+    uni.showToast({ title: "请至少输入2个字", icon: "none" });
+    return;
+  }
+  api
+    .feedbackSubmit({ content })
+    .then(() => {
+      uni.showToast({ title: "感谢反馈", icon: "success" });
+      closeFeedback();
+    })
+    .catch(() => {});
 }
 
 function onInvite() {
@@ -294,6 +376,12 @@ function onLogout() {
   color: #fff;
 }
 
+.avatar-img {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+}
+
 .vip-badge {
   position: absolute;
   bottom: -4rpx;
@@ -301,6 +389,12 @@ function onLogout() {
   padding: 4rpx 10rpx;
   border-radius: 12rpx;
   z-index: 2;
+  &.silver {
+    background: linear-gradient(135deg, #bdc3c7, #95a5a6);
+  }
+  &.gold {
+    background: linear-gradient(135deg, #fff9c4, #ffb300);
+  }
   &.rainbow {
     background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7);
     background-size: 400% 400%;
@@ -420,6 +514,12 @@ function onLogout() {
   font-size: 40rpx;
 }
 
+.medal-img {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 16rpx;
+}
+
 .medal-progress {
   margin-top: 20rpx;
   padding-top: 20rpx;
@@ -535,6 +635,17 @@ function onLogout() {
   background: $color-bg;
   border-radius: 12rpx;
   font-size: 28rpx;
+}
+
+.feedback-area {
+  width: 100%;
+  min-height: 200rpx;
+  padding: 20rpx;
+  margin-bottom: 32rpx;
+  background: $color-bg;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
 }
 
 .nick-actions {

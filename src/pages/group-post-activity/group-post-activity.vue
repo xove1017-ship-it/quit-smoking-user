@@ -43,9 +43,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import groupApi from '@/api/group'
 
 const content = ref('')
 const previewUrl = ref('')
+const groupId = ref('')
 
 const emojis = ['😊', '👍', '💪', '🎉', '❤️', '🔥', '🌈', '🌟', '🚭', '💯', '✨', '🎯']
 
@@ -56,6 +59,10 @@ const charCountClass = computed(() => {
   if (n > 490) return 'error'
   if (n > 450) return 'warning'
   return ''
+})
+
+onLoad((q?: Record<string, string>) => {
+  if (q?.group_id) groupId.value = String(q.group_id)
 })
 
 function onInput() {
@@ -84,14 +91,25 @@ function removeImage() {
 }
 
 function postActivity() {
-  if (!content.value.trim()) {
+  const text = content.value.trim()
+  if (!text) {
     uni.showToast({ title: '请输入动态内容', icon: 'none' })
     return
   }
-  uni.showToast({ title: '发布成功', icon: 'success' })
-  setTimeout(() => {
-    uni.navigateBack()
-  }, 800)
+  if (!groupId.value) {
+    uni.showToast({ title: '缺少小组，请从小组详情进入', icon: 'none' })
+    return
+  }
+  const images: string[] = []
+  if (previewUrl.value?.startsWith('http')) images.push(previewUrl.value)
+
+  groupApi
+    .postAdd({ group_id: groupId.value, content: text, images })
+    .then(() => {
+      uni.showToast({ title: '发布成功', icon: 'success' })
+      setTimeout(() => uni.navigateBack(), 600)
+    })
+    .catch(() => {})
 }
 </script>
 

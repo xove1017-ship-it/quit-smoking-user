@@ -26,6 +26,7 @@
         <text class="streak-unit">天</text>
       </view>
       <text class="stats-info">累计戒烟{{ totalSmokeFreeDays }}天 · 已节省¥{{ savedMoneyYuan }}</text>
+      <text v-if="elapsedDisplayText" class="elapsed-line">已坚持戒烟 {{ elapsedDisplayText }}</text>
       <view class="milestone-progress">
         <view class="progress-label">
           <text>1天</text>
@@ -37,10 +38,14 @@
       </view>
     </view>
 
-    <!-- 打卡 -->
+    <!-- 打卡（蓝图：首页为统一打卡入口；NONE/SUCCESS/FAILED 与后端一致） -->
     <view class="checkin-section">
+      <text v-if="todayStatusLabel" class="today-status-tag">{{ todayStatusLabel }}</text>
       <button class="checkin-btn" @click="onCheckin">
         {{ todayChecked ? '今日已打卡' : '今日无烟打卡' }}
+      </button>
+      <button class="smoke-record-btn" :disabled="todayChecked" @click="onRecordSmoke">
+        记录吸烟（复吸）
       </button>
     </view>
 
@@ -239,7 +244,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onHide, onShow } from '@dcloudio/uni-app'
 import AppTabBar from '../../components/AppTabBar.vue'
 import api from '@/utils/api'
 
@@ -269,7 +274,60 @@ const totalSmokeFreeDays = ref(0)
 /** 接口 money_saved_yuan 为字符串小数 */
 const savedMoneyYuan = ref('0')
 const todayChecked = ref(false)
+/** NONE / SUCCESS / FAILED，见业务蓝图与 module-home-user-common.md */
+const todayStatus = ref<string | null>(null)
 const stageModuleSub = ref('身体恢复阶段')
+
+/** 服务端下发的已戒烟秒数 + 本页锚点时间，用于秒级递增展示 */
+const baseElapsedSeconds = ref(-1)
+const elapsedAnchorMs = ref(0)
+const elapsedTick = ref(0)
+let elapsedTimer: ReturnType<typeof setInterval> | null = null
+
+function formatQuitDuration(totalSec: number): string {
+  const sec = Math.max(0, Math.floor(totalSec))
+  const d = Math.floor(sec / 86400)
+  const h = Math.floor((sec % 86400) / 3600)
+  const m = Math.floor((sec % 3600) / 60)
+  const s = sec % 60
+  if (d > 0) return `${d}天${h}小时${m}分${s}秒`
+  if (h > 0) return `${h}小时${m}分${s}秒`
+  if (m > 0) return `${m}分${s}秒`
+  return `${s}秒`
+}
+
+const elapsedDisplayText = computed(() => {
+  elapsedTick.value
+  if (baseElapsedSeconds.value < 0) return ''
+  const live =
+    baseElapsedSeconds.value +
+    (elapsedAnchorMs.value
+      ? Math.floor((Date.now() - elapsedAnchorMs.value) / 1000)
+      : 0)
+  return formatQuitDuration(live)
+})
+
+const todayStatusLabel = computed(() => {
+  const t = todayStatus.value
+  if (t === 'SUCCESS') return '今日状态：无烟 ✓'
+  if (t === 'FAILED') return '今日状态：已记录吸烟'
+  if (t === 'NONE' || !t) return '今日状态：尚未打卡'
+  return ''
+})
+
+function startElapsedTimer() {
+  stopElapsedTimer()
+  elapsedTimer = setInterval(() => {
+    elapsedTick.value++
+  }, 1000)
+}
+
+function stopElapsedTimer() {
+  if (elapsedTimer) {
+    clearInterval(elapsedTimer)
+    elapsedTimer = null
+  }
+}
 
 const progress30 = computed(() => Math.min(100, (streak.value / 30) * 100))
 /** 里程碑条：无专门字段时用连续天数粗算 7 日节点 */
@@ -328,7 +386,12 @@ function mapBets(list: any) {
     time: b.remain_text || b.time_left || b.time || '',
     status: b.status_text || b.status || '',
     stake: b.stake_text || b.stake || b.reward_text || '',
-    solo: Number(b.player_limit) === 1 || !!(b.is_solo ?? b.solo),
+    solo:
+      String(b.type) === 'solo' ||
+      Number(b.player_limit) === 1 ||
+      !!(b.is_solo ?? b.solo),
+    player_limit: b.player_limit,
+    type: b.type,
   }))
 }
 
@@ -350,6 +413,15 @@ function applyHomeData(d: any) {
   totalSmokeFreeDays.value = Number(d.total_smoke_free_days) || 0
   savedMoneyYuan.value = d.money_saved_yuan != null ? String(d.money_saved_yuan) : '0'
   todayChecked.value = !!d.today_checked
+  todayStatus.value =
+    typeof d.today_status === 'string' ? d.today_status : todayStatus.value
+  if (d.quit_timestamp != null && Number.isFinite(Number(d.quit_elapsed_seconds))) {
+    baseElapsedSeconds.value = Number(d.quit_elapsed_seconds)
+    elapsedAnchorMs.value = Date.now()
+  } else {
+    baseElapsedSeconds.value = -1
+    elapsedAnchorMs.value = 0
+  }
   stageModuleSub.value = stageSubtitleFrom(d)
   stages.value = mapStages(d)
   bets.value = mapBets(d.bets)
@@ -382,7 +454,12 @@ function loadHome() {
 }
 
 onShow(() => {
+  startElapsedTimer()
   loadHome()
+})
+
+onHide(() => {
+  stopElapsedTimer()
 })
 
 const emergencyOpen = ref(false)
@@ -417,6 +494,12 @@ function onCheckin() {
   uni.navigateTo({ url: '/pages/checkin/checkin' })
 }
 
+/** 蓝图：吸烟记录走同一打卡页，选择「没忍住」提交 FAILED */
+function onRecordSmoke() {
+  if (todayChecked.value) return
+  uni.navigateTo({ url: '/pages/checkin/checkin?preset=smoke' })
+}
+
 function goBetList() {
   uni.reLaunch({ url: '/pages/bet_index/bet_index' })
 }
@@ -430,7 +513,10 @@ function goBetDetail(b: any) {
     uni.navigateTo({ url: '/pages/bet_index/bet_index' })
     return
   }
-  const solo = Number(b.player_limit) === 1 || !!b.solo
+  const solo =
+    String(b.type) === 'solo' ||
+    Number(b.player_limit) === 1 ||
+    !!b.solo
   const page = solo ? 'bet_detail_solo/bet_detail_solo' : 'bet_detail_multi/bet_detail_multi'
   uni.navigateTo({ url: `/pages/${page}?id=${b.id}` })
 }
@@ -542,6 +628,14 @@ function confirmStrategy() {
   margin-bottom: 32rpx;
 }
 
+.elapsed-line {
+  display: block;
+  font-size: 24rpx;
+  color: $color-primary;
+  margin-bottom: 24rpx;
+  font-variant-numeric: tabular-nums;
+}
+
 .milestone-progress {
   margin-top: 8rpx;
 }
@@ -567,23 +661,54 @@ function confirmStrategy() {
   border-radius: 4rpx;
 }
 
-.checkin-section,
+.checkin-section {
+  padding: 0 40rpx;
+  margin-bottom: 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
 .emergency-section {
   padding: 0 40rpx;
   margin-bottom: 32rpx;
+}
+
+.today-status-tag {
+  font-size: 26rpx;
+  color: $color-text-sub;
+  padding: 0 8rpx;
 }
 
 .checkin-btn {
   width: 100%;
   height: 112rpx;
   line-height: 112rpx;
-  background: $color-primary;
+  background: var(--primary-color, $color-primary);
   color: #fff;
   border: none;
   border-radius: 96rpx;
   font-size: 32rpx;
   font-weight: 600;
   box-shadow: 0 8rpx 24rpx rgba(26, 188, 156, 0.3);
+}
+
+.smoke-record-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #fff;
+  color: $color-danger;
+  border: 2rpx solid rgba(231, 76, 60, 0.35);
+  border-radius: 96rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.smoke-record-btn[disabled] {
+  opacity: 0.45;
+  color: $color-text-sub;
+  border-color: #ddd;
 }
 
 .emergency-btn {

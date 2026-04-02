@@ -6,49 +6,53 @@
         <button class="tool-btn primary" @click="shareGroup">分享</button>
       </view>
 
-      <view class="group-info-section">
+      <view v-if="loading" class="loading-hint">加载中…</view>
+
+      <view v-else class="group-info-section">
         <view class="group-header">
           <view class="group-icon big">
-            <text>{{ groupIcon }}</text>
+            <image v-if="coverUrl" class="cover-img" :src="coverUrl" mode="aspectFill" />
+            <text v-else>{{ groupIcon }}</text>
           </view>
           <view class="group-details">
             <text class="group-name">{{ groupName }}</text>
-            <text class="group-members">👥 28位成员</text>
-            <view class="group-status-pill">
-              <text>活跃</text>
+            <text class="group-members">👥 {{ memberCount }}位成员</text>
+            <view v-if="joined" class="group-status-pill ok">
+              <text>已加入</text>
+            </view>
+            <view v-else class="group-status-pill">
+              <text>未加入</text>
             </view>
           </view>
         </view>
-        <text class="group-description">
-          互相监督，共同戒烟！每天分享戒烟心得，互相鼓励支持。这是一个温暖的社区，我们一起战胜烟瘾，迎接健康生活。
-        </text>
+        <text class="group-description">{{ groupDesc }}</text>
         <view class="group-stats">
           <view class="stat-item">
-            <text class="stat-value">85%</text>
-            <text class="stat-label">七日成功率</text>
+            <text class="stat-value">{{ statRankLabel }}</text>
+            <text class="stat-label">连续天数排名</text>
           </view>
           <view class="stat-item">
-            <text class="stat-value">12</text>
-            <text class="stat-label">今日打卡</text>
+            <text class="stat-value">{{ statToday }}</text>
+            <text class="stat-label">动态条数</text>
           </view>
           <view class="stat-item">
-            <text class="stat-value">3</text>
-            <text class="stat-label">新消息</text>
+            <text class="stat-value">{{ memberCount }}</text>
+            <text class="stat-label">成员数</text>
           </view>
         </view>
-        <button class="checkin-full" @click="goCheckin">今日小组打卡</button>
+        <button class="checkin-full" @click="goCheckin">去今日打卡</button>
       </view>
 
-      <view class="members-section">
+      <view v-if="!loading" class="members-section">
         <view class="section-title-row">
           <text class="section-title">👥 小组成员</text>
-          <text class="section-meta">28人</text>
+          <text class="section-meta">{{ memberCount }}人 · 按连续无烟天排序</text>
         </view>
-        <view class="members-grid">
+        <view v-if="!membersShow.length" class="empty-hint">暂无成员数据</view>
+        <view v-else class="members-grid">
           <view v-for="(m, i) in membersShow" :key="i" class="member-item">
             <view class="member-avatar">
               <text>{{ m.av }}</text>
-              <view v-if="m.badge" class="vip-badge" :class="m.badgeClass">{{ m.badge }}</view>
             </view>
             <text class="member-name">{{ m.name }}</text>
             <text class="member-status">{{ m.status }}</text>
@@ -56,19 +60,19 @@
         </view>
       </view>
 
-      <view class="activity-section">
+      <view v-if="!loading" class="activity-section">
         <view class="section-title-row">
           <text class="section-title">📝 最新动态</text>
           <view class="activity-head-right">
-            <text class="section-meta">3条新消息</text>
+            <text class="section-meta">{{ activities.length }}条</text>
             <button class="mini-post" @click="goPost">发布动态</button>
           </view>
         </view>
-        <view class="activity-list">
+        <view v-if="!activities.length" class="empty-hint">暂无动态，打卡后会同步至此</view>
+        <view v-else class="activity-list">
           <view v-for="(a, ai) in activities" :key="ai" class="activity-item">
             <view class="activity-avatar">
               <text>{{ a.av }}</text>
-              <view v-if="a.badge" class="vip-badge sm" :class="a.badgeClass">{{ a.badge }}</view>
             </view>
             <view class="activity-content">
               <view class="activity-header">
@@ -76,10 +80,6 @@
                 <text class="activity-time">{{ a.time }}</text>
               </view>
               <text class="activity-text">{{ a.text }}</text>
-              <view class="activity-actions">
-                <button class="ghost-btn" @click="likeActivity(a)">👍 {{ a.likes }}</button>
-                <button class="ghost-btn" @click="commentActivity(a)">💬 {{ a.comments }}</button>
-              </view>
             </view>
           </view>
         </view>
@@ -90,65 +90,112 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import groupApi from '@/api/group'
 
-const groupName = ref('戒烟互助群')
-const groupIcon = ref('💪')
+const groupId = ref('')
+const loading = ref(true)
+const groupName = ref('小组')
+const groupIcon = ref('👥')
+const groupDesc = ref('')
+const coverUrl = ref('')
+const memberCount = ref(0)
+const joined = ref(false)
+const statRankLabel = ref('—')
+const statToday = ref('—')
 
-const membersShow = [
-  { av: '我', name: '李明', status: '已打卡', badge: '完美', badgeClass: 'rainbow' },
-  { av: '张', name: '张伟', status: '已打卡', badge: '完美', badgeClass: 'gold' },
-  { av: '王', name: '王强', status: '已打卡', badge: '完美', badgeClass: 'silver' },
-  { av: '+', name: '查看更多', status: '25人', badge: '', badgeClass: '' },
-]
+interface MemRow {
+  av: string
+  name: string
+  status: string
+}
+
+const membersShow = ref<MemRow[]>([])
 
 interface Act {
   av: string
   user: string
   time: string
   text: string
-  likes: number
-  comments: number
-  badge?: string
-  badgeClass?: string
 }
 
-const activities = ref<Act[]>([
-  {
-    av: '张',
-    user: '张伟',
-    time: '10分钟前',
-    text: '今天成功拒绝了同事递烟，感觉很有成就感！',
-    likes: 12,
-    comments: 5,
-    badge: '完美',
-    badgeClass: 'gold',
-  },
-  {
-    av: '王',
-    user: '王强',
-    time: '1小时前',
-    text: '坚持第15天了，呼吸明显顺畅了很多',
-    likes: 8,
-    comments: 3,
-    badge: '完美',
-    badgeClass: 'silver',
-  },
-  {
-    av: '李',
-    user: '李华',
-    time: '2小时前',
-    text: '分享一个戒烟小技巧：想抽烟时喝杯温水，很有效',
-    likes: 15,
-    comments: 7,
-    badge: '完美',
-    badgeClass: 'silver',
-  },
-])
+const activities = ref<Act[]>([])
+
+function pickAv(n: unknown): string {
+  const s = String(n ?? '?').trim()
+  return s.slice(0, 1) || '?'
+}
+
+function sortMembers(list: Record<string, unknown>[]): Record<string, unknown>[] {
+  return [...list].sort(
+    (a, b) =>
+      Number(b.streak_days ?? b.streak ?? 0) - Number(a.streak_days ?? a.streak ?? 0),
+  )
+}
+
+function loadDetail() {
+  if (!groupId.value) {
+    loading.value = false
+    return
+  }
+  loading.value = true
+  Promise.all([
+    groupApi.detail(groupId.value),
+    groupApi.posts({ group_id: groupId.value, page: 1, limit: 30 }),
+  ])
+    .then(([dRes, pRes]) => {
+      const d = (dRes.data || {}) as Record<string, unknown>
+      const g = (d.group || {}) as Record<string, unknown>
+      groupName.value = String(g.name ?? '小组')
+      groupDesc.value = String(g.description ?? g.desc ?? '')
+      coverUrl.value = typeof g.cover === 'string' ? g.cover : ''
+      memberCount.value = Number(g.member_count ?? g.members ?? 0) || 0
+      joined.value = !!d.joined
+
+      const raw = (d.members as Record<string, unknown>[]) || []
+      const sorted = sortMembers(raw)
+      const topStreak = sorted.length
+        ? Number(sorted[0].streak_days ?? sorted[0].streak ?? 0)
+        : 0
+      statRankLabel.value = topStreak > 0 ? `最高${topStreak}天` : '—'
+
+      membersShow.value = sorted.slice(0, 12).map((m) => ({
+        av: pickAv(m.nickname ?? m.name ?? m.user_id),
+        name: String(m.nickname ?? m.name ?? '成员'),
+        status:
+          m.streak_days != null
+            ? `连续${m.streak_days}天`
+            : m.today_status != null
+              ? String(m.today_status)
+              : '—',
+      }))
+
+      const list = ((pRes.data || {}) as { list?: Record<string, unknown>[] }).list || []
+      statToday.value = String(list.length)
+      activities.value = list.map((row) => ({
+        av: pickAv(row.nickname ?? row.user_name ?? row.uid),
+        user: String(row.nickname ?? row.user_name ?? '成员'),
+        time: String(row.created_at ?? row.time ?? row.date ?? ''),
+        text: String(row.content ?? row.text ?? ''),
+      }))
+    })
+    .catch(() => {
+      /* request 已 toast */
+    })
+    .finally(() => {
+      loading.value = false
+    })
+}
 
 onLoad((q?: Record<string, string>) => {
+  if (q?.id) groupId.value = String(q.id)
   if (q?.name) groupName.value = decodeURIComponent(String(q.name))
   if (q?.icon) groupIcon.value = decodeURIComponent(String(q.icon))
+})
+
+onShow(() => {
+  if (groupId.value) loadDetail()
+  else loading.value = false
 })
 
 function goInvite() {
@@ -157,25 +204,22 @@ function goInvite() {
 }
 
 function shareGroup() {
-  uni.showToast({ title: '已生成小组邀请链接', icon: 'none' })
+  uni.showToast({ title: '请使用右上角菜单分享', icon: 'none' })
 }
 
+/** 蓝图：全局打卡入口与首页一致，跳转统一打卡页 */
 function goCheckin() {
-  const q = `name=${encodeURIComponent(groupName.value)}&icon=${encodeURIComponent(groupIcon.value)}`
-  uni.navigateTo({ url: `/pages/group-checkin-detail/group-checkin-detail?${q}` })
+  uni.navigateTo({ url: '/pages/checkin/checkin' })
 }
 
 function goPost() {
-  uni.navigateTo({ url: '/pages/group-post-activity/group-post-activity' })
-}
-
-function likeActivity(a: Act) {
-  a.likes += 1
-}
-
-function commentActivity(a: Act) {
-  a.comments += 1
-  uni.showToast({ title: '评论已发布', icon: 'success' })
+  if (!groupId.value) {
+    uni.showToast({ title: '缺少小组ID', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pages/group-post-activity/group-post-activity?group_id=${groupId.value}`,
+  })
 }
 </script>
 
@@ -185,6 +229,14 @@ function commentActivity(a: Act) {
 .page {
   min-height: 100vh;
   background: $color-bg;
+}
+
+.loading-hint,
+.empty-hint {
+  text-align: center;
+  padding: 32rpx;
+  color: $color-text-sub;
+  font-size: 28rpx;
 }
 
 .scroll {
@@ -242,6 +294,12 @@ function commentActivity(a: Act) {
   font-size: 48rpx;
   color: #fff;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
 }
 
 .group-details {
@@ -273,6 +331,10 @@ function commentActivity(a: Act) {
   color: #fff;
 }
 
+.group-status-pill.ok {
+  background: $color-primary;
+}
+
 .group-description {
   font-size: 28rpx;
   color: $color-text-sub;
@@ -296,7 +358,7 @@ function commentActivity(a: Act) {
 }
 
 .stat-value {
-  font-size: 36rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: $color-primary;
   display: block;
@@ -304,7 +366,7 @@ function commentActivity(a: Act) {
 }
 
 .stat-label {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: $color-text-sub;
 }
 
@@ -333,6 +395,8 @@ function commentActivity(a: Act) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24rpx;
+  flex-wrap: wrap;
+  gap: 8rpx;
 }
 
 .section-title {
@@ -385,34 +449,6 @@ function commentActivity(a: Act) {
   position: relative;
 }
 
-.vip-badge {
-  position: absolute;
-  bottom: -4rpx;
-  right: -4rpx;
-  font-size: 16rpx;
-  padding: 2rpx 6rpx;
-  border-radius: 8rpx;
-  color: #fff;
-  font-weight: 600;
-}
-
-.vip-badge.sm {
-  font-size: 14rpx;
-}
-
-.vip-badge.silver {
-  background: linear-gradient(45deg, #c0c0c0, #e0e0e0);
-}
-
-.vip-badge.gold {
-  background: linear-gradient(45deg, #ffd700, #ffec8b);
-  color: #333;
-}
-
-.vip-badge.rainbow {
-  background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
-}
-
 .member-name {
   font-size: 24rpx;
   color: $color-text;
@@ -446,7 +482,6 @@ function commentActivity(a: Act) {
   justify-content: center;
   color: #fff;
   font-size: 28rpx;
-  position: relative;
   flex-shrink: 0;
 }
 
@@ -459,6 +494,7 @@ function commentActivity(a: Act) {
   display: flex;
   justify-content: space-between;
   margin-bottom: 8rpx;
+  gap: 16rpx;
 }
 
 .activity-user {
@@ -470,6 +506,7 @@ function commentActivity(a: Act) {
 .activity-time {
   font-size: 24rpx;
   color: $color-text-sub;
+  flex-shrink: 0;
 }
 
 .activity-text {
@@ -477,20 +514,6 @@ function commentActivity(a: Act) {
   color: $color-text;
   line-height: 1.5;
   display: block;
-  margin-bottom: 12rpx;
-}
-
-.activity-actions {
-  display: flex;
-  gap: 16rpx;
-}
-
-.ghost-btn {
-  background: #fff;
-  color: $color-text-sub;
-  border: 1rpx solid #ddd;
-  font-size: 24rpx;
-  padding: 8rpx 16rpx;
-  border-radius: 8rpx;
+  word-break: break-all;
 }
 </style>

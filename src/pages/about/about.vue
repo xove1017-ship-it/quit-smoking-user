@@ -3,7 +3,7 @@
     <view class="card app-block">
       <text class="emoji">🚭</text>
       <text class="app-name">戒烟小程序</text>
-      <text class="ver">版本 1.0.0</text>
+      <text class="ver">版本 {{ versionText }}</text>
       <text class="desc">
         专注于帮助用户成功戒烟的健康管理应用，通过科学的激励机制和社区支持，让戒烟之路不再孤单。
       </text>
@@ -28,27 +28,51 @@
       <text class="section-title">联系我们</text>
       <view class="info-item">
         <text class="contact-ico">📧</text>
-        <text class="contact-txt">邮箱：support@jieyan.com</text>
+        <text class="contact-txt">邮箱：{{ contactEmail }}</text>
       </view>
       <view class="info-item">
         <text class="contact-ico">📱</text>
-        <text class="contact-txt">客服热线：400-123-4567</text>
+        <text class="contact-txt">客服热线：{{ contactHotline }}</text>
       </view>
       <view class="info-item">
         <text class="contact-ico">🌐</text>
-        <text class="contact-txt">官方网站：www.jieyan.com</text>
+        <text class="contact-txt">官方网站：{{ contactWebsite }}</text>
       </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import api from '@/utils/api'
+
 const features = [
   { icon: '📊', t: '戒烟记录', d: '详细记录戒烟天数、成功率等数据' },
   { icon: '🎖️', t: '勋章系统', d: '通过勋章激励用户坚持控烟' },
   { icon: '👥', t: '小组互助', d: '加入戒烟小组，互相鼓励支持' },
   { icon: '💰', t: '赌约挑战', d: '通过赌约增加戒烟动力' },
 ]
+
+const versionText = ref('1.0.0')
+const contactEmail = ref('—')
+const contactHotline = ref('—')
+const contactWebsite = ref('—')
+
+onShow(() => {
+  api
+    .commonAbout()
+    .then((res) => {
+      const d = (res.data || {}) as Record<string, unknown>
+      if (d.version != null) versionText.value = String(d.version)
+      if (d.email != null) contactEmail.value = String(d.email)
+      if (d.hotline != null) contactHotline.value = String(d.hotline)
+      if (d.website_url != null) contactWebsite.value = String(d.website_url)
+    })
+    .catch(() => {
+      /* 保留默认文案 */
+    })
+})
 </script>
 
 <style scoped lang="scss">

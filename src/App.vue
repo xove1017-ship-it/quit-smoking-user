@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from "@dcloudio/uni-app";
-import { isLoggedIn, setLoginSession } from "./utils/auth";
+import {
+  isLoggedIn,
+  notifyAuthBootstrapComplete,
+  parseLoginPayload,
+  setLoginSession,
+} from "./utils/auth";
 import api from "./utils/api";
 
 /** 未登录也可访问（登录页、协议说明等） */
@@ -18,37 +23,47 @@ function runSilentLogin() {
       console.log('wxCode>>', loginRes);
       if (!loginRes.code) {
         pendingSilentLogin = false;
+        notifyAuthBootstrapComplete();
         return;
       }
       api.wxLogin(loginRes.code).then((res) => {
-        const d = res.data;
-        const token = d.userInfo.token;
+        const d = (res.data || {}) as Record<string, unknown>;
+        const { token, userInfo, session } = parseLoginPayload(d);
         if (token) {
           setLoginSession(token, {
             loginAt: Date.now(),
-            userInfo: d.userInfo,
-            session: d.session,
+            userInfo: userInfo ?? d.userInfo,
+            session,
           });
+          notifyAuthBootstrapComplete();
           uni.reLaunch({ url: "/pages/index/index" });
+        } else {
+          notifyAuthBootstrapComplete();
         }
         pendingSilentLogin = false;
       }, () => {
         pendingSilentLogin = false;
+        notifyAuthBootstrapComplete();
       });
     },
     fail: () => {
       pendingSilentLogin = false;
+      notifyAuthBootstrapComplete();
     },
   });
 }
 
 onLaunch(() => {
   if (isLoggedIn()) {
+    notifyAuthBootstrapComplete();
     uni.reLaunch({ url: "/pages/index/index" });
     return;
   }
   // #ifdef MP-WEIXIN
   runSilentLogin();
+  // #endif
+  // #ifndef MP-WEIXIN
+  notifyAuthBootstrapComplete();
   // #endif
 });
 
@@ -68,6 +83,8 @@ onHide(() => {
 @import "uview-plus/index.scss";
 
 page {
+  /* 业务蓝图视觉规范：与 theme.scss $color-primary 一致 */
+  --primary-color: #1abc9c;
   background-color: #f8f9fa;
   color: #2c3e50;
 }

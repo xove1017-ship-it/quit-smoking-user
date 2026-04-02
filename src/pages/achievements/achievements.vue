@@ -2,7 +2,7 @@
   <view class="page">
     <view class="card section">
       <text class="section-title">戒烟成就</text>
-      <view v-for="(a, i) in achievements" :key="i" class="row">
+      <view v-for="(a, i) in achievementRows" :key="i" class="row">
         <view class="row-icon">{{ a.icon }}</view>
         <view class="row-body">
           <text class="row-title">{{ a.title }}</text>
@@ -24,8 +24,8 @@
         </view>
       </view> -->
       <view class="medals">
-        <view v-for="(m, i) in medals" :key="i" class="medal" :class="{ locked: m.locked }">
-          <view  :class="['medal-graphic', m.kind]">
+        <view v-for="(m, i) in medalRows" :key="i" class="medal" :class="{ locked: m.locked }">
+          <view :class="['medal-graphic', m.kind]">
             <view class="shine" />
           </view>
           <text class="medal-name">{{ m.name }}</text>
@@ -38,19 +38,19 @@
       <text class="section-title">控烟统计</text>
       <view class="stats">
         <view class="stat">
-          <text class="stat-num">45天</text>
+          <text class="stat-num">{{ statMaxStreak }}</text>
           <text class="stat-label">历史最长天数</text>
         </view>
         <view class="stat">
-          <text class="stat-num">98%</text>
+          <text class="stat-num">{{ statRate30 }}</text>
           <text class="stat-label">30天成功率</text>
         </view>
         <view class="stat">
-          <text class="stat-num">7</text>
+          <text class="stat-num">{{ statPerfectWeeks }}</text>
           <text class="stat-label">完美周数</text>
         </view>
         <view class="stat">
-          <text class="stat-num">2</text>
+          <text class="stat-num">{{ statGroups }}</text>
           <text class="stat-label">参与小组</text>
         </view>
       </view>
@@ -59,31 +59,87 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import api from '@/utils/api'
+import checkinApi from '@/api/checkin'
 
+const achievementRows = ref<{ icon: string; title: string; desc: string; state: string }[]>([])
+const medalRows = ref<{ name: string; count: string; kind: string; locked: boolean }[]>([])
 
-const achievements = [
-  { icon: '🔥', title: '戒烟第一周', desc: '连续7天控烟成功', state: '已完成' },
-  { icon: '💪', title: '戒烟一个月', desc: '连续30天控烟成功', state: '已完成' },
-  { icon: '🎯', title: '戒烟三个月', desc: '连续90天控烟成功', state: '已完成' },
-  { icon: '🌟', title: '戒烟半年', desc: '连续180天控烟成功', state: '进行中' },
-]
+const statMaxStreak = ref('—')
+const statRate30 = ref('—')
+const statPerfectWeeks = ref('—')
+const statGroups = ref('—')
 
-const medals = [
-  { name: '五彩勋章', count: '1枚', kind: 'rainbow', locked: false },
-  { name: '金勋章', count: '1枚', kind: 'gold', locked: false },
-  { name: '银勋章', count: '5枚', kind: 'silver', locked: false },
-  { name: '未解锁', count: '?', kind: 'locked', locked: true },
-]
+function formatRate30(v: unknown): string {
+  if (v == null || v === '') return '—'
+  const n = Number(v)
+  if (Number.isNaN(n)) return String(v)
+  const s = n % 1 === 0 ? String(n) : n.toFixed(1)
+  return `${s}%`
+}
 
+function mapMilestones(list: unknown[]): typeof achievementRows.value {
+  return list.slice(0, 20).map((raw) => {
+    const m = raw as Record<string, unknown>
+    const unlocked = !!(m.unlocked ?? m.is_unlocked)
+    return {
+      icon: '🔥',
+      title: String(m.title ?? m.name ?? '里程碑'),
+      desc: String(m.desc ?? m.description ?? ''),
+      state: unlocked ? '已达成' : '未达成',
+    }
+  })
+}
 
+function mapMedals(list: unknown[]): typeof medalRows.value {
+  return list.slice(0, 12).map((raw) => {
+    const m = raw as Record<string, unknown>
+    const tier = String(m.tier ?? m.level ?? 'silver')
+    const kind = tier === 'rainbow' ? 'rainbow' : tier === 'gold' ? 'gold' : tier === 'silver' ? 'silver' : 'locked'
+    const unlocked = !!(m.unlocked ?? m.is_unlocked)
+    return {
+      name: String(m.title ?? m.name ?? '勋章'),
+      count: unlocked ? '已解锁' : '未解锁',
+      kind: unlocked ? kind : 'locked',
+      locked: !unlocked,
+    }
+  })
+}
 
-onMounted(() => {
-});
+function loadPage() {
+  Promise.all([api.achievementIndex(), checkinApi.recordStats()])
+    .then(([achRes, statsRes]) => {
+      const ad = (achRes.data || {}) as Record<string, unknown>
+      const milestones = (ad.milestones as unknown[]) || []
+      const medals = (ad.medals as unknown[]) || []
+      achievementRows.value =
+        milestones.length > 0
+          ? mapMilestones(milestones)
+          : [{ icon: '📭', title: '暂无里程碑数据', desc: '坚持打卡即可解锁', state: '—' }]
+      medalRows.value =
+        medals.length > 0
+          ? mapMedals(medals)
+          : [{ name: '暂无勋章', count: '—', kind: 'locked', locked: true }]
 
-// 销毁实例防止内存泄露
-onUnmounted(() => {
-});
+      const sd = statsRes.data || {}
+      statMaxStreak.value =
+        sd.max_historical_streak != null ? `${sd.max_historical_streak}天` : '—'
+      statRate30.value = formatRate30(sd.success_rate_30_days)
+      statPerfectWeeks.value =
+        sd.perfect_weeks != null ? String(sd.perfect_weeks) : '—'
+      statGroups.value =
+        sd.joined_group_count != null ? String(sd.joined_group_count) : '—'
+    })
+    .catch(() => {
+      /* request 已提示 */
+    })
+}
+
+onShow(() => {
+  loadPage()
+})
 </script>
 
 <style scoped lang="scss">

@@ -8,58 +8,40 @@
 
       <view class="stats-grid">
         <view class="stat-card">
-          <text class="stat-value">15</text>
+          <text class="stat-value">{{ streakVal }}</text>
           <text class="stat-label">连续无烟天数</text>
-          <text class="stat-trend muted">历史最长天数45天</text>
+          <text class="stat-trend muted">历史最长 {{ maxStreakVal }} 天</text>
         </view>
         <view class="stat-card">
-          <text class="stat-value">¥450</text>
+          <text class="stat-value">{{ moneyVal }}</text>
           <text class="stat-label">累计节省金额</text>
-          <text class="stat-trend up">↑ 较上周+¥60</text>
+          <text class="stat-trend muted">与首页统计同源</text>
         </view>
         <view class="stat-card">
-          <text class="stat-value">98%</text>
+          <text class="stat-value">{{ rate30Val }}</text>
           <text class="stat-label">30天成功率</text>
-          <text class="stat-trend up">↑ 较上周+3%</text>
+          <text class="stat-trend muted">最近30个自然日</text>
         </view>
         <view class="stat-card">
-          <text class="stat-value">2</text>
-          <text class="stat-label">失败次数</text>
-          <text class="stat-trend down">↑ 较上周+1次</text>
+          <text class="stat-value">{{ relapseVal }}</text>
+          <text class="stat-label">复吸记录天数</text>
+          <text class="stat-trend muted">打卡中记录为吸烟的天数</text>
         </view>
       </view>
 
       <view class="chart-section">
         <view class="section-title-row">
           <text class="section-title">💚 健康收益</text>
-          <text class="section-hint">戒烟15天的成果</text>
+          <text class="section-hint">基于打卡与档案估算</text>
         </view>
         <view class="health-stats">
-          <view class="health-item">
+          <view v-for="(h, hi) in healthLines" :key="hi" class="health-item">
             <view class="health-icon">
-              <text>🫁</text>
+              <text>{{ h.icon }}</text>
             </view>
             <view class="health-info">
-              <text class="health-value">肺功能提升 15%</text>
-              <text class="health-desc">呼吸更顺畅</text>
-            </view>
-          </view>
-          <view class="health-item">
-            <view class="health-icon">
-              <text>❤️</text>
-            </view>
-            <view class="health-info">
-              <text class="health-value">心血管风险降低 25%</text>
-              <text class="health-desc">心脏更健康</text>
-            </view>
-          </view>
-          <view class="health-item">
-            <view class="health-icon">
-              <text>🧠</text>
-            </view>
-            <view class="health-info">
-              <text class="health-value">精力提升 30%</text>
-              <text class="health-desc">精神状态更好</text>
+              <text class="health-value">{{ h.value }}</text>
+              <text class="health-desc">{{ h.desc }}</text>
             </view>
           </view>
         </view>
@@ -68,9 +50,7 @@
       <view class="chart-section">
         <view class="section-title-row">
           <text class="section-title">📈 戒烟趋势</text>
-          <picker :value="periodIndex" :range="periodLabels" @change="onPeriodChange">
-            <view class="period-picker">{{ periodLabels[periodIndex] }}</view>
-          </picker>
+          <text class="section-hint">近15日无烟情况</text>
         </view>
         <view class="chart-container">
           <view class="chart-visual">
@@ -103,9 +83,10 @@
       <view class="history-section">
         <view class="section-title-row">
           <text class="section-title">📝 打卡历史</text>
-          <text class="section-hint">最近30条</text>
+          <text class="section-hint">最近打卡</text>
         </view>
         <view class="history-list">
+          <view v-if="!historyItems.length" class="section-hint" style="padding: 24rpx 0">暂无打卡记录</view>
           <view v-for="(h, hi) in historyItems" :key="hi" class="history-item">
             <text class="history-date">{{ h.date }}</text>
             <view class="history-status" :class="h.ok ? 'status-success' : 'status-failure'">
@@ -121,28 +102,25 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import AppTabBar from '../../components/AppTabBar.vue'
+import checkinApi from '@/api/checkin'
+import type { RecordStatsData } from '@/api/checkin'
 
-const periodLabels = ['最近7天', '最近30天', '最近90天']
-const periodIndex = ref(1)
+const streakVal = ref('—')
+const maxStreakVal = ref('—')
+const moneyVal = ref('—')
+const rate30Val = ref('—')
+const relapseVal = ref('—')
 
-const chartDataMap: Record<number, { data: number[]; labels: string[] }> = {
-  0: {
-    data: [85, 90, 95, 88, 92, 96, 98],
-    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-  },
-  1: {
-    data: [80, 65, 90, 95],
-    labels: ['第1周', '第2周', '第3周', '第4周'],
-  },
-  2: {
-    data: [70, 75, 80, 85, 90, 95],
-    labels: ['第1月', '第2月', '第3月', '第4月', '第5月', '第6月'],
-  },
-}
+const healthLines = ref<{ icon: string; value: string; desc: string }[]>([
+  { icon: '🫁', value: '加载中…', desc: '少吸支数（服务端汇总）' },
+])
 
-const chartBars = computed(() => chartDataMap[periodIndex.value]?.data ?? chartDataMap[1].data)
-const chartLabels = computed(() => chartDataMap[periodIndex.value]?.labels ?? chartDataMap[1].labels)
+const trend15 = ref<{ data: number[]; labels: string[] }>({ data: [], labels: [] })
+
+const chartBars = computed(() => trend15.value.data)
+const chartLabels = computed(() => trend15.value.labels)
 
 const avgRate = computed(() => {
   const arr = chartBars.value
@@ -153,9 +131,106 @@ const avgRate = computed(() => {
 const bestLabel = computed(() => {
   const arr = chartBars.value
   const labels = chartLabels.value
+  if (!arr.length) return '—'
   const max = Math.max(...arr)
   const idx = arr.indexOf(max)
-  return `${labels[idx]} ${max}%`
+  return `${labels[idx] ?? ''} ${max}%`
+})
+
+function trendToBars(trend: unknown[] | undefined): { data: number[]; labels: string[] } {
+  if (!trend?.length) return { data: [], labels: [] }
+  const data = trend.map((row) => {
+    const r = row as Record<string, unknown>
+    if (r.is_smoke_free === 1 || r.is_smoke_free === true || r.smoke_free === 1) return 100
+    if (r.is_smoke_free === 0 || r.smoke_free === 0) return 25
+    if (r.has_checkin === false || r.checked === false) return 0
+    return 60
+  })
+  const labels = trend.map((row, i) => {
+    const r = row as Record<string, unknown>
+    const d = r.date ?? r.day ?? r.label
+    return d != null ? String(d).replace(/^\d{4}-/, '') : `${i + 1}日`
+  })
+  return { data, labels }
+}
+
+function applyStats(d: RecordStatsData) {
+  streakVal.value = d.streak_days != null ? String(d.streak_days) : '—'
+  maxStreakVal.value = d.max_historical_streak != null ? String(d.max_historical_streak) : '—'
+  moneyVal.value =
+    d.money_saved_yuan != null ? `¥${d.money_saved_yuan}` : '—'
+  if (d.success_rate_30_days != null) {
+    const n = Number(d.success_rate_30_days)
+    rate30Val.value = Number.isNaN(n) ? String(d.success_rate_30_days) : `${n % 1 === 0 ? n : n.toFixed(1)}%`
+  } else {
+    rate30Val.value = '—'
+  }
+  relapseVal.value = d.relapse_days != null ? String(d.relapse_days) : '—'
+
+  const cigs = d.cigarettes_avoided
+  const life = d.life_minutes_recovered
+  healthLines.value = [
+    {
+      icon: '🚭',
+      value: `约少吸 ${cigs != null ? cigs : '—'} 支烟`,
+      desc: '按档案与打卡由服务端估算',
+    },
+    {
+      icon: '❤️',
+      value: `生命时间约 +${life != null ? life : '—'} 分钟`,
+      desc: '按少吸支数估算',
+    },
+  ]
+
+  trend15.value = trendToBars(d.trend_15days)
+}
+
+function mapCalendarList(list: unknown[]): { date: string; ok: boolean }[] {
+  if (!Array.isArray(list)) return []
+  return list.slice(0, 40).map((row) => {
+    const r = row as Record<string, unknown>
+    const ok =
+      r.is_smoke_free === 1 ||
+      r.is_smoke_free === true ||
+      r.smoke_free === 1 ||
+      r.today_status === 'SUCCESS'
+    return {
+      date: String(r.date ?? r.checkin_date ?? r.created_at ?? ''),
+      ok: !!ok,
+    }
+  })
+}
+
+const historyItems = ref<{ date: string; ok: boolean }[]>([])
+
+function pad2(n: number) {
+  return n < 10 ? `0${n}` : String(n)
+}
+
+function formatRangeDates() {
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - 60)
+  const fmt = (x: Date) =>
+    `${x.getFullYear()}-${pad2(x.getMonth() + 1)}-${pad2(x.getDate())}`
+  return { start: fmt(start), end: fmt(end) }
+}
+
+function loadRecord() {
+  const range = formatRangeDates()
+  Promise.all([checkinApi.recordStats(), checkinApi.calendar(range)])
+    .then(([statsRes, calRes]) => {
+      applyStats((statsRes.data || {}) as RecordStatsData)
+      const list = (calRes.data as { list?: unknown[] })?.list
+      historyItems.value = mapCalendarList(list || []).reverse()
+    })
+    .catch(() => {
+      /* request 已 toast */
+    })
+}
+
+onShow(() => {
+  loadRecord()
 })
 
 function barStyle(h: number) {
@@ -168,28 +243,11 @@ function barStyle(h: number) {
   }
 }
 
-function onPeriodChange(e: { detail: { value: string } }) {
-  periodIndex.value = Number(e.detail.value)
-}
-
 function showDetail(i: number) {
   const v = chartBars.value[i]
   const lb = chartLabels.value[i]
   uni.showToast({ title: `${lb}: ${v}%`, icon: 'none' })
 }
-
-const historyItems = [
-  { date: '2026-04-02 08:30', ok: true },
-  { date: '2026-04-01 09:15', ok: true },
-  { date: '2026-03-31 10:00', ok: true },
-  { date: '2026-03-30 14:20', ok: false },
-  { date: '2026-03-29 08:45', ok: true },
-  { date: '2026-03-28 09:30', ok: true },
-  { date: '2026-03-27 11:00', ok: true },
-  { date: '2026-03-26 16:45', ok: false },
-  { date: '2026-03-25 08:20', ok: true },
-  { date: '2026-03-24 09:10', ok: true },
-]
 </script>
 
 <style scoped lang="scss">
