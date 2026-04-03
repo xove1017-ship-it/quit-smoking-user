@@ -36,21 +36,44 @@
 ## 我的 `QuitUser`
 
 
-| 方法   | 路径                   | 说明                                   |
-| ---- | -------------------- | ------------------------------------ |
-| GET  | `/quit/user/profile` | 昵称、头像、VIP 等级、徽章样式                  |
+| 方法   | 路径                   | 说明                                          |
+| ---- | -------------------- | ------------------------------------------- |
+| GET  | `/quit/user/profile` | 昵称、头像、会员等级（与 `user.vip_level` 一致）及展示文案      |
 | POST | `/quit/user/profile` | 修改昵称和/或头像（body 至少包含 `nickname`、`avatar` 之一） |
+
+
+**会员等级（与数据库、配置一致）**
+
+- **库表字段**：`user.vip_level`（`varchar`，迁移注释见 `database/migrations/*user_vip_level*`），存**等级标识**英文小写，与下表 `level` 列一致。
+- **配置**：`config/quit_member_levels.php`（阈值、中文名、条件文案、视觉参考说明）。
+- **计算**：`app/common/library/QuitMemberLevel.php` — 根据 `**QuitSmokingHelper::maxHistoricalStreak()`（历史最长连续无烟打卡天数）** 取满足阈值的最高一档；**非**「当前连续 streak」单独作为唯一依据（复吸后当前 streak 会断，历史最高档仍保留）。打卡成功及个人资料拉取时会同步写回 `vip_level`。
+- **接口字段**：`vip_level` 与 `level` 同为等级标识（兼容旧字段名）；`level_name` / `condition_text` / `image_hint` 为展示用；`badge_style` 为前端主题键（通常与 `level` 相同，无等级时为 `none`）。
+
+
+| 等级名称  | 等级标识 `level`（`vip_level`） | 解锁条件（`condition_text`，与配置一致） | 视觉参考（`image_hint`，前端映射图标资源）              |
+| ----- | ------------------------- | ---------------------------- | ---------------------------------------- |
+| 青铜卫士  | `bronze`                  | 成功坚持无烟打卡 7 天                 | 铜质盾牌图标                                   |
+| 白银先锋  | `silver`                  | 成功坚持无烟打卡 30 天                | 银质闪电图标                                   |
+| 黄金战将  | `gold`                    | 成功坚持无烟打卡 90 天                | 金色奖杯图标                                   |
+| 铂金领航  | `platinum`                | 成功坚持无烟打卡 180 天               | 铂金指南针图标                                  |
+| 璀璨新生  | `rainbow`                 | 成功坚持无烟打卡 365 天               | 五彩虹光图标                                   |
+| （未达档） | `none`                    | 历史最长连续无烟打卡未满 7 天时            | `level_name` 等为空串，仅用 `badge_style: none` |
 
 
 **GET `/quit/user/profile` `data` 字段**
 
 
-| 字段                | 说明                                             |
-| ----------------- | ---------------------------------------------- |
-| user_id           | 当前用户 ID                                        |
-| nickname / avatar | 昵称、头像                                          |
-| vip_level         | 如 none / silver / gold / rainbow（无字段时可能为 none） |
-| badge_style       | 与 VIP 对应的展示样式                                  |
+| 字段                | 说明                                                                               |
+| ----------------- | -------------------------------------------------------------------------------- |
+| user_id           | 当前用户 ID                                                                          |
+| nickname / avatar | 昵称、头像                                                                            |
+| vip_level         | 等级标识，与 `level` 相同：`none` / `bronze` / `silver` / `gold` / `platinum` / `rainbow` |
+| level             | 同 `vip_level`，便于与产品文档「等级标识」对齐                                                    |
+| level_name        | 等级中文名称，未达档（`none`）时为空字符串                                                         |
+| condition_text    | 该档解锁条件说明文案（展示用）                                                                  |
+| image_hint        | 视觉参考说明（非 URL；前端按 level 映射本地/静态图标）                                                |
+| badge_style       | 主题/样式键：`none` 或 `bronze`～`rainbow`，与 `vip_level` 对应                              |
+
 
 **POST `/quit/user/profile`**
 
@@ -64,22 +87,23 @@
 
 ### 头像图片上传（会员端公共接口，非 quit 路径）
 
-修改头像时，先上传图片拿到存储路径，再将返回的 **`url`** 作为 **`POST /quit/user/profile`** 的 `avatar` 提交。
+修改头像时，先上传图片拿到存储路径，再将返回的 `**url`** 作为 `**POST /quit/user/profile**` 的 `avatar` 提交。
 
-| 方法  | 路径               | 说明        |
-| --- | ---------------- | --------- |
+
+| 方法   | 路径                 | 说明                     |
+| ---- | ------------------ | ---------------------- |
 | POST | `/api/ajax/upload` | 会员端附件上传（BuildAdmin 通用） |
 
-- **所属应用**：`api` 应用下 `Ajax` 控制器，**不在** `quit` 路由分组内；完整 URL 须带 **`/api`** 前缀，例如：`POST https://域名/api/ajax/upload`（本地联调可为 `.../index.php/api/ajax/upload`，依部署而定）。
-- **鉴权**：需登录，请求头携带与其它会员接口相同的 **`ba-user-token`**（未登录按会员端约定返回，如 `code: 303`）。
-- **请求**：`multipart/form-data`
-  - **`file`**（必填）：表单文件字段名固定为 `file`。
-  - **`driver`**（可选）：存储驱动，默认 `local`。
-  - **`topic`**（可选）：存储子目录/业务主题，默认 `default`；需与后台上传策略一致时可按项目约定传值。
-- **成功**：`code === 1`，`msg` 为中文「文件上传成功！」；`data.file` 为附件记录对象（已去掉部分内部字段），其中 **`url`** 为相对存储路径，用于写入资料接口的 `avatar`（会员模型会再处理默认头像与 CDN，与会员中心一致）。
-- **失败**：`code === 0`，`msg` 为中文或可读说明（格式不允许、过大、未上传文件等）。
-- **上传限制**：允许后缀、MIME、大小等以 **`GET /api/index/index`** 返回的 `site.upload`（或后台上传配置）为准；小程序端可先拉取该配置再校验本地选图。
 
+- **所属应用**：`api` 应用下 `Ajax` 控制器，**不在** `quit` 路由分组内；完整 URL 须带 `**/api`** 前缀，例如：`POST https://域名/api/ajax/upload`（本地联调可为 `.../index.php/api/ajax/upload`，依部署而定）。
+- **鉴权**：需登录，请求头携带与其它会员接口相同的 `**ba-user-token`**（未登录按会员端约定返回，如 `code: 303`）。
+- **请求**：`multipart/form-data`
+  - `**file`**（必填）：表单文件字段名固定为 `file`。
+  - `**driver**`（可选）：存储驱动，默认 `local`。
+  - `**topic**`（可选）：存储子目录/业务主题，默认 `default`；需与后台上传策略一致时可按项目约定传值。
+- **成功**：`code === 1`，`msg` 为中文「文件上传成功！」；`data.file` 为附件记录对象（已去掉部分内部字段），其中 `**url`** 为相对存储路径，用于写入资料接口的 `avatar`（会员模型会再处理默认头像与 CDN，与会员中心一致）。
+- **失败**：`code === 0`，`msg` 为中文或可读说明（格式不允许、过大、未上传文件等）。
+- **上传限制**：允许后缀、MIME、大小等以 `**GET /api/index/index`** 返回的 `site.upload`（或后台上传配置）为准；小程序端可先拉取该配置再校验本地选图。
 
 ---
 

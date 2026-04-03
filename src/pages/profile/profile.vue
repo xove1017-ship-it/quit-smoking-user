@@ -18,6 +18,7 @@
             <text v-else class="avatar-emoji">👤</text>
           </view>
           <view class="vip-badge" :class="vipClass">
+            <text class="vip-icon">{{ vipIcon }}</text>
             <text class="vip-txt">{{ vipLabel }}</text>
           </view>
         </view>
@@ -177,7 +178,8 @@ const displayName = ref(defaultName);
 /** 接口返回的头像字段（可能为相对路径） */
 const avatarUrl = ref("");
 const vipLabel = ref("会员");
-const vipClass = ref("silver");
+const vipIcon = ref("✨");
+const vipClass = ref("none");
 const levelTitle = ref("戒烟路上，与你同行");
 const medals = ref<{ icon: string; tier: string; image?: string }[]>([
   { icon: "🏅", tier: "silver" },
@@ -209,20 +211,35 @@ function applyUserProfile(u: Record<string, unknown>) {
     avatarUrl.value = String(u.avatar).trim();
   }
   const vl = String(u.vip_level ?? "none");
-  vipLabel.value =
-    vl === "rainbow"
-      ? "彩虹"
-      : vl === "gold"
-        ? "黄金"
-        : vl === "silver"
-          ? "白银"
-          : "会员";
-  vipClass.value = tierToClass(vl === "none" ? "silver" : vl);
+  const vip = mapVipLevel(vl);
+  vipLabel.value = vip.label;
+  vipIcon.value = vip.icon;
+  vipClass.value = vip.cls;
+}
+
+/** 会员档：与连续无烟打卡天数对应（后端 vip_level：bronze / silver / gold / platinum / rainbow / none） */
+function mapVipLevel(vl: string): { label: string; icon: string; cls: string } {
+  switch (vl) {
+    case "bronze":
+      return { label: "青铜卫士", icon: "🛡️", cls: "bronze" };
+    case "silver":
+      return { label: "白银先锋", icon: "⚡", cls: "silver" };
+    case "gold":
+      return { label: "黄金战将", icon: "🏆", cls: "gold" };
+    case "platinum":
+      return { label: "铂金领航", icon: "🧭", cls: "platinum" };
+    case "rainbow":
+      return { label: "璀璨新生", icon: "🌈", cls: "rainbow" };
+    default:
+      return { label: "会员", icon: "✨", cls: "none" };
+  }
 }
 
 function tierToClass(tier: string): string {
   if (tier === "rainbow") return "rainbow";
   if (tier === "gold") return "gold";
+  if (tier === "platinum") return "platinum";
+  if (tier === "bronze") return "bronze";
   if (tier === "silver") return "silver";
   return "silver";
 }
@@ -458,11 +475,26 @@ function onLogout() {
   padding: 4rpx 10rpx;
   border-radius: 12rpx;
   z-index: 2;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2rpx;
+  max-width: 200rpx;
+
+  &.none {
+    background: linear-gradient(135deg, #b2bec3, #636e72);
+  }
+  &.bronze {
+    background: linear-gradient(135deg, #cd7f32, #8b4513);
+  }
   &.silver {
-    background: linear-gradient(135deg, #bdc3c7, #95a5a6);
+    background: linear-gradient(135deg, #dfe6e9, #b2bec3);
   }
   &.gold {
     background: linear-gradient(135deg, #fff9c4, #ffb300);
+  }
+  &.platinum {
+    background: linear-gradient(135deg, #dfe9f7, #a8c0d8);
   }
   &.rainbow {
     background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7);
@@ -483,10 +515,23 @@ function onLogout() {
   }
 }
 
+.vip-icon {
+  font-size: 16rpx;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
 .vip-txt {
   font-size: 18rpx;
   color: #fff;
   font-weight: 700;
+  line-height: 1.2;
+}
+
+.vip-badge.silver .vip-txt,
+.vip-badge.platinum .vip-txt {
+  color: #2d3436;
+  text-shadow: none;
 }
 
 .user-name-row {
@@ -565,6 +610,10 @@ function onLogout() {
   justify-content: center;
   box-sizing: border-box;
 
+  &.bronze {
+    background: linear-gradient(135deg, #fdf5e6, #deb887);
+    border-color: #cd7f32;
+  }
   &.silver {
     background: linear-gradient(135deg, #f8f9fa, #e9ecef);
     border-color: #c0c0c0;
@@ -572,6 +621,10 @@ function onLogout() {
   &.gold {
     background: linear-gradient(135deg, #fff9c4, #ffecb3);
     border-color: #ffd700;
+  }
+  &.platinum {
+    background: linear-gradient(135deg, #eef5fc, #d4e3f0);
+    border-color: #a8c0d8;
   }
   &.rainbow {
     background: linear-gradient(135deg, #ffeaa7, #fdcb6e, #e17055);
