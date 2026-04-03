@@ -2,147 +2,275 @@
   <view class="page">
     <scroll-view scroll-y class="scroll" :show-scrollbar="false">
       <view class="toolbar">
-        <button class="refresh-btn" @click="refresh">🔄</button>
+        <button class="refresh-btn" type="button" @tap="refresh">🔄</button>
       </view>
 
-      <view class="checkin-stats">
-        <view class="stats-header">
-          <view class="group-icon">
-            <text>{{ groupIcon }}</text>
-          </view>
-          <view class="group-info">
-            <text class="group-name">{{ groupName }}</text>
-            <text class="today-date">{{ todayStr }}</text>
-          </view>
-        </view>
-        <view class="stats-grid">
-          <view class="stat-item">
-            <text class="stat-value">12</text>
-            <text class="stat-label">今日打卡</text>
-          </view>
-          <view class="stat-item">
-            <text class="stat-value">28</text>
-            <text class="stat-label">总成员数</text>
-          </view>
-          <view class="stat-item">
-            <text class="stat-value">42.8%</text>
-            <text class="stat-label">打卡率</text>
-          </view>
-        </view>
-        <view class="stats-grid second">
-          <view class="stat-item">
-            <text class="stat-value">11</text>
-            <text class="stat-label">成功控烟</text>
-          </view>
-          <view class="stat-item">
-            <text class="stat-value">1</text>
-            <text class="stat-label">没忍住</text>
-          </view>
-          <view class="stat-item">
-            <text class="stat-value">91.7%</text>
-            <text class="stat-label">成功率</text>
-          </view>
-        </view>
-        <view class="progress-bar">
-          <view class="progress-fill" style="width: 42.8%" />
-        </view>
-      </view>
+      <view v-if="!groupId" class="empty-page">缺少小组参数</view>
 
-      <view class="calendar-section">
-        <text class="section-title">📅 本月打卡日历</text>
-        <view class="calendar">
-          <text v-for="h in weekHeaders" :key="h" class="calendar-header">{{ h }}</text>
-          <view
-            v-for="(cell, ci) in calendarCells"
-            :key="ci"
-            class="calendar-day"
-            :class="cell.cls"
-          >
-            <text v-if="cell.day">{{ cell.day }}</text>
-          </view>
+      <template v-else>
+        <view v-if="loading" class="loading-hint">加载中…</view>
+        <template v-else>
+        <view v-if="detailError" class="empty-page">无法获取小组信息，请稍后重试</view>
+        <view v-else-if="joined === false" class="empty-page">
+          组内打卡统计仅对小组成员开放。请先返回小组详情页加入小组后再查看。
         </view>
-        <view class="calendar-legend">
-          <text class="legend-text">✅ 已打卡  ❌ 未打卡  🔵 今日</text>
-          <text class="legend-rate">本月打卡率：100%</text>
-        </view>
-      </view>
+        <view v-else-if="statsError" class="empty-page">统计数据加载失败，请点击右上角刷新重试</view>
+        <view v-else-if="!statsData" class="empty-page">暂无打卡统计数据</view>
 
-      <view class="members-section">
-        <text class="section-title">👥 今日打卡成员</text>
-        <view class="members-list">
-          <view v-for="(m, mi) in checkinMembers" :key="mi" class="member-row">
-            <view class="member-avatar">
-              <text>{{ m.av }}</text>
+        <template v-else>
+        <view class="checkin-stats">
+          <view class="stats-header">
+            <view class="group-icon">
+              <image
+                v-if="coverSrc(statsData?.group?.cover)"
+                class="group-icon-img"
+                :src="coverSrc(statsData?.group?.cover)"
+                mode="aspectFill"
+              />
             </view>
-            <view class="member-info">
-              <text class="member-name">{{ m.name }}</text>
-              <text class="member-time">{{ m.time }}</text>
+            <view class="group-info">
+              <text class="group-name">{{ statsData?.group?.name ?? statsData?.group?.title ?? '小组' }}</text>
+              <text class="today-date">统计日 {{ statsData?.date ?? '—' }} · 月 {{ statsData?.month ?? '—' }}</text>
             </view>
-            <view class="checkin-status" :class="m.statusClass">
-              <text>{{ m.status }}</text>
+          </view>
+          <view class="stats-grid">
+            <view class="stat-item">
+              <text class="stat-value">{{ numOrDash(statsData?.daily?.checked_count) }}</text>
+              <text class="stat-label">今日已打卡</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{ numOrDash(statsData?.member_total) }}</text>
+              <text class="stat-label">总成员数</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{ pctOrDash(statsData?.daily?.checkin_rate) }}</text>
+              <text class="stat-label">打卡率</text>
+            </view>
+          </view>
+          <view class="stats-grid second">
+            <view class="stat-item">
+              <text class="stat-value">{{ numOrDash(statsData?.daily?.success_count) }}</text>
+              <text class="stat-label">成功控烟</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{ numOrDash(statsData?.daily?.fail_count) }}</text>
+              <text class="stat-label">没忍住</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{ pctOrDash(statsData?.daily?.success_rate) }}</text>
+              <text class="stat-label">无烟占比</text>
+            </view>
+          </view>
+          <view class="progress-bar">
+            <view
+              class="progress-fill"
+              :style="{ width: progressPct(statsData?.daily?.checkin_rate) }"
+            />
+          </view>
+        </view>
+
+        <view class="calendar-section">
+          <text class="section-title">📅 本月打卡日历</text>
+          <view class="calendar">
+            <text v-for="h in weekHeaders" :key="h" class="calendar-header">{{ h }}</text>
+            <view
+              v-for="(cell, ci) in calendarCells"
+              :key="ci"
+              class="calendar-day"
+              :class="[
+                !cell.day ? 'empty' : cell.base,
+                { today: cell.isToday && cell.day > 0 },
+              ]"
+            >
+              <text v-if="cell.day">{{ cell.day }}</text>
+            </view>
+          </view>
+          <view class="calendar-legend">
+            <text class="legend-text">✅ 有打卡 · ❌ 无打卡 · 🔵 今日 · 灰为未到来</text>
+            <text class="legend-rate">本月平均打卡率：{{ pctOrDash(statsData?.month_avg_checkin_rate) }}</text>
+          </view>
+        </view>
+
+        <view class="members-section">
+          <text class="section-title">👥 今日打卡成员</text>
+          <view v-if="!(statsData?.members && statsData.members.length)" class="empty-members">暂无成员数据</view>
+          <view v-else class="members-list">
+            <view
+              v-for="(m, mi) in (statsData?.members || [])"
+              :key="String(m.user_id ?? mi)"
+              class="member-row"
+            >
+              <view class="member-avatar">
+                <image
+                  v-if="coverSrc(m.avatar)"
+                  class="member-avatar-img"
+                  :src="coverSrc(m.avatar)"
+                  mode="aspectFill"
+                />
+                <text v-else>{{ pickAv(String(m.nickname ?? m.name ?? '?')) }}</text>
+              </view>
+              <view class="member-info">
+                <text class="member-name">{{ m.nickname ?? m.name ?? '成员' }}</text>
+                <text class="member-time">{{ memberTimeLine(m) }}</text>
+              </view>
+              <view class="checkin-status" :class="statusClass(m.checkin_status)">
+                <text>{{ m.checkin_status ?? '—' }}</text>
+              </view>
             </view>
           </view>
         </view>
-      </view>
+        </template>
+        </template>
+      </template>
     </scroll-view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { computed, ref } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import groupApi from '@/api/group'
 
-const groupName = ref('戒烟互助群')
-const groupIcon = ref('💪')
+const groupId = ref('')
+const groupIcon = ref('')
+const loading = ref(false)
+/** 是否为小组成员；仅在 detail 成功返回后有意义 */
+const joined = ref<boolean | null>(null)
+const detailError = ref(false)
+/** 已是成员但 stats 请求失败 */
+const statsError = ref(false)
+/** GET /quit/group/stats 的 `data`，字段见 module-group.md 4.5.2 */
+const statsData = ref<any>(null)
 
 const weekHeaders = ['日', '一', '二', '三', '四', '五', '六']
 
-const todayStr = computed(() => {
-  const now = new Date()
-  return now.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
-  })
-})
+/** 展示用：封面 URL（接口字段 group.cover） */
+function coverSrc(raw: unknown): string {
+  if (typeof raw !== 'string') return ''
+  const t = raw.trim()
+  if (!t) return ''
+  if (t.startsWith('http')) return t
+  if (t.startsWith('//')) return `https:${t}`
+  return t
+}
 
-const calendarCells = computed(() => {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = now.getMonth()
-  const firstDow = new Date(y, m, 1).getDay()
-  const daysInMonth = new Date(y, m + 1, 0).getDate()
-  const today = now.getDate()
-  const cells: { day: number; cls: string }[] = []
+function numOrDash(raw: unknown): string {
+  if (raw == null || raw === '') return '—'
+  return String(raw)
+}
+
+function pctOrDash(raw: unknown): string {
+  if (raw == null || raw === '') return '—'
+  return `${Number(raw).toFixed(1)}%`
+}
+
+function progressPct(raw: unknown): string {
+  if (raw == null || raw === '') return '0%'
+  const pct = Math.min(100, Math.max(0, Number(raw)))
+  return `${pct}%`
+}
+
+function pickAv(n: string): string {
+  const s = n.trim()
+  return s.slice(0, 1) || '?'
+}
+
+/** 文档：checkin_time 为 H:i 或空；直接展示并拼简短说明 */
+function memberTimeLine(m: Record<string, unknown>): string {
+  const t = m.checkin_time
+  if (t != null && String(t) !== '') return String(t)
+  return '未打卡'
+}
+
+function statusClass(st: unknown): string {
+  const s = String(st ?? '')
+  if (s === 'success') return 'checked'
+  if (s === 'fail') return 'fail'
+  return 'pending'
+}
+
+interface CalCell {
+  day: number
+  base: string
+  isToday: boolean
+}
+
+const calendarCells = computed((): CalCell[] => {
+  const cal = (statsData.value?.calendar || []) as Record<string, unknown>[]
+  if (!cal.length) return []
+  const monthStr = String(statsData.value?.month ?? '')
+  const parts = monthStr.split('-')
+  const y = Number(parts[0]) || new Date().getFullYear()
+  const mo = Number(parts[1]) || new Date().getMonth() + 1
+  const firstDow = new Date(y, mo - 1, 1).getDay()
+  const cells: CalCell[] = []
   for (let i = 0; i < firstDow; i++) {
-    cells.push({ day: 0, cls: 'empty' })
+    cells.push({ day: 0, base: 'empty', isToday: false })
   }
-  for (let d = 1; d <= daysInMonth; d++) {
-    let cls = 'checked'
-    if (d > today) cls = 'future'
-    else if (d === today) cls = 'today'
-    else cls = 'checked'
-    cells.push({ day: d, cls })
+  for (const row of cal) {
+    const day = Number(row.day ?? 0)
+    const isFuture = !!row.is_future
+    const isToday = !!row.is_today
+    const checkedCount = Number(row.checked_count ?? 0)
+    let base = 'missed'
+    if (isFuture) base = 'future'
+    else if (checkedCount > 0) base = 'checked'
+    else base = 'missed'
+    cells.push({ day, base, isToday })
   }
   return cells
 })
 
-const checkinMembers = [
-  { av: '我', name: '李明', time: '09:15 已打卡', status: '已打卡', statusClass: 'checked' },
-  { av: '张', name: '张伟', time: '08:30 已打卡', status: '已打卡', statusClass: 'checked' },
-  { av: '王', name: '王强', time: '10:20 已打卡', status: '已打卡', statusClass: 'checked' },
-  { av: '李', name: '李华', time: '-', status: '待打卡', statusClass: 'pending' },
-  { av: '+9', name: '其他成员', time: '共9人已打卡', status: '查看全部', statusClass: 'checked' },
-]
+/** 先确认是否已加入（与文档一致：stats 仅成员可调），再拉打卡统计 */
+async function loadPage() {
+  if (!groupId.value) {
+    statsData.value = null
+    joined.value = null
+    return
+  }
+  loading.value = true
+  detailError.value = false
+  statsError.value = false
+  statsData.value = null
+  joined.value = null
+
+  try {
+    const dRes = await groupApi.detail(groupId.value)
+    const d = (dRes.data || {}) as Record<string, unknown>
+    joined.value = !!d.joined
+
+    if (!joined.value) {
+      return
+    }
+
+    const sRes = await groupApi.stats({ group_id: groupId.value })
+    /** 与 module-group.md 4.5.2：`data` 直出，页面绑定 `statsData` */
+    statsData.value = sRes.data || {}
+  } catch {
+    if (joined.value === null) {
+      detailError.value = true
+    } else if (joined.value === true) {
+      statsError.value = true
+    }
+    statsData.value = null
+  } finally {
+    loading.value = false
+  }
+}
 
 onLoad((q?: Record<string, string>) => {
-  if (q?.name) groupName.value = decodeURIComponent(String(q.name))
+  const id = q?.id ?? q?.group_id
+  if (id) groupId.value = String(id)
   if (q?.icon) groupIcon.value = decodeURIComponent(String(q.icon))
 })
 
+onShow(() => {
+  loadPage()
+})
+
 function refresh() {
-  uni.showToast({ title: '数据已刷新', icon: 'success' })
+  loadPage()
+  uni.showToast({ title: '已刷新', icon: 'success' })
 }
 </script>
 
@@ -174,6 +302,14 @@ function refresh() {
   padding: 8rpx 16rpx;
 }
 
+.empty-page,
+.loading-hint {
+  text-align: center;
+  padding: 48rpx;
+  font-size: 28rpx;
+  color: $color-text-sub;
+}
+
 .checkin-stats,
 .calendar-section,
 .members-section {
@@ -202,6 +338,12 @@ function refresh() {
   font-size: 48rpx;
   color: #fff;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.group-icon-img {
+  width: 100%;
+  height: 100%;
 }
 
 .group-info {
@@ -319,6 +461,18 @@ function refresh() {
   color: $color-text;
 }
 
+.calendar-day.today.checked {
+  background: #27ae60;
+  color: #fff;
+  border-color: $color-primary;
+}
+
+.calendar-day.today.missed {
+  background: $color-danger;
+  color: #fff;
+  border-color: $color-primary;
+}
+
 .calendar-day.future {
   color: $color-text-sub;
   background: $color-bg;
@@ -331,6 +485,13 @@ function refresh() {
   flex-wrap: wrap;
   gap: 12rpx;
   font-size: 24rpx;
+  color: $color-text-sub;
+}
+
+.empty-members {
+  text-align: center;
+  padding: 32rpx;
+  font-size: 28rpx;
   color: $color-text-sub;
 }
 
@@ -360,6 +521,12 @@ function refresh() {
   color: #fff;
   font-size: 28rpx;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.member-avatar-img {
+  width: 100%;
+  height: 100%;
 }
 
 .member-info {
@@ -394,6 +561,11 @@ function refresh() {
 
 .checkin-status.pending {
   background: $color-warn;
+  color: #fff;
+}
+
+.checkin-status.fail {
+  background: $color-danger;
   color: #fff;
 }
 </style>

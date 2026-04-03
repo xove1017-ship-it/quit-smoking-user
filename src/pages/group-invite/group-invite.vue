@@ -1,8 +1,8 @@
 <template>
   <view class="page">
-    <scroll-view scroll-y class="scroll" :show-scrollbar="false">
+    <view class="scroll">
       <view class="toolbar-top">
-        <button class="send-btn" @click="sendInvites">发送邀请</button>
+        <button class="send-btn" type="button" @tap="sendInvites">发送邀请</button>
       </view>
 
       <view class="invite-content">
@@ -12,14 +12,22 @@
           </view>
           <view class="group-info">
             <text class="group-name">{{ groupName }}</text>
-            <text class="group-stats">👥 28位成员 · 85%成功率</text>
+            <text class="group-stats">👥 {{ memberCount }}位成员 · 成功率 {{ rateLabel }}</text>
           </view>
         </view>
         <view class="invite-message">
           <text class="message-title">💌 邀请消息</text>
           <text class="message-text">
-            我正在参加"{{ groupName }}"，这是一个温暖的戒烟社区。大家一起互相监督、分享经验，戒烟成功率高达85%！邀请你一起加入，我们共同战胜烟瘾！
+            我正在参加「{{ groupName }}」互助戒烟（当前 {{ memberCount }} 人，成功率 {{ rateLabel }}）。邀请你一起加入，我们共同战胜烟瘾！
           </text>
+        </view>
+        <view v-if="inviteCodeDisplay" class="invite-code-box">
+          <text class="invite-code-box-title">私密小组邀请码</text>
+          <view class="invite-code-box-row">
+            <text class="invite-code-box-val">{{ inviteCodeDisplay }}</text>
+            <button class="invite-code-box-btn" type="button" @tap="copyInviteCode">复制</button>
+          </view>
+          <text class="invite-code-box-tip">好友在小组详情页加入时需填写此邀请码</text>
         </view>
       </view>
 
@@ -68,27 +76,68 @@
       <view class="invite-link-section">
         <text class="section-title">🔗 邀请链接</text>
         <view class="link-container">
-          <input class="link-input" :value="inviteLink" readonly />
-          <button class="copy-btn" @click="copyLink">{{ copyBtnText }}</button>
+          <input class="link-input" type="text" :value="inviteLink" readonly />
+          <button class="copy-btn" type="button" @tap="copyLink">{{ copyBtnText }}</button>
         </view>
         <text class="link-tip">复制链接发送给好友，点击即可加入小组</text>
       </view>
-    </scroll-view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { ref, computed } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import groupApi from '@/api/group'
 
+const groupId = ref('')
 const groupName = ref('戒烟互助群')
 const groupIcon = ref('💪')
-const inviteLink = ref('https://jq.weixin.com/invite/abc123')
+const memberCount = ref(0)
+const rateLabel = ref('—')
 const copyBtnText = ref('复制')
+/** 详情接口在组长 + 私密时返回 */
+const inviteCodeDisplay = ref('')
+
+/** 小程序内可分享的页面路径（无前导 /） */
+const inviteLink = computed(() => {
+  const id = groupId.value
+  if (id) return `pages/group-detail/group-detail?id=${encodeURIComponent(id)}`
+  return 'pages/group/group'
+})
+
+function loadDetail() {
+  if (!groupId.value) return
+  groupApi.detail(groupId.value).then((res) => {
+    const d = (res.data || {}) as Record<string, unknown>
+    const g = (d.group || {}) as Record<string, unknown>
+    groupName.value = String(g.name ?? groupName.value)
+    memberCount.value = Number(g.member_count ?? g.members ?? 0) || 0
+    rateLabel.value = g.rate != null ? String(g.rate) : '—'
+    const ic = g.invite_code
+    inviteCodeDisplay.value =
+      ic != null && String(ic).trim() !== '' ? String(ic).trim() : ''
+  })
+}
+
+function copyInviteCode() {
+  if (!inviteCodeDisplay.value) return
+  uni.setClipboardData({
+    data: inviteCodeDisplay.value,
+    success() {
+      uni.showToast({ title: '已复制邀请码', icon: 'none' })
+    },
+  })
+}
 
 onLoad((q?: Record<string, string>) => {
+  if (q?.id) groupId.value = String(q.id)
   if (q?.name) groupName.value = decodeURIComponent(String(q.name))
   if (q?.icon) groupIcon.value = decodeURIComponent(String(q.icon))
+})
+
+onShow(() => {
+  loadDetail()
 })
 
 function tip(msg: string) {
@@ -122,8 +171,7 @@ function copyLink() {
 }
 
 .scroll {
-  height: 100vh;
-  box-sizing: border-box;
+  @include form-page-scroll;
   padding: 24rpx;
   padding-bottom: 48rpx;
 }
@@ -211,6 +259,54 @@ function copyLink() {
   line-height: 1.5;
 }
 
+.invite-code-box {
+  margin-top: 24rpx;
+  padding: 24rpx;
+  background: $color-bg;
+  border-radius: 16rpx;
+}
+
+.invite-code-box-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: $color-text;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.invite-code-box-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.invite-code-box-val {
+  font-size: 32rpx;
+  font-weight: 700;
+  letter-spacing: 3rpx;
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+}
+
+.invite-code-box-btn {
+  flex-shrink: 0;
+  background: $color-primary;
+  color: #fff;
+  font-size: 24rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 24rpx;
+  border: none;
+}
+
+.invite-code-box-tip {
+  font-size: 22rpx;
+  color: $color-text-sub;
+  margin-top: 12rpx;
+  display: block;
+  line-height: 1.4;
+}
+
 .section-title {
   font-size: 32rpx;
   font-weight: 600;
@@ -273,12 +369,17 @@ function copyLink() {
 }
 
 .link-input {
+  @include form-control-base;
   flex: 1;
-  padding: 22rpx 28rpx;
+  min-width: 0;
+  min-height: 80rpx;
+  padding: 16rpx 24rpx;
   border: 1rpx solid #ddd;
   border-radius: 16rpx;
-  font-size: 26rpx;
   background: $color-bg;
+  color: $color-text;
+  cursor: default;
+  user-select: text;
 }
 
 .copy-btn {

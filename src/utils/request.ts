@@ -22,7 +22,7 @@ const request = <T = any>(options: UniApp.RequestOptions): Promise<ApiResponse<T
   return new Promise((resolve, reject) => {
     const fullUrl = options.url.startsWith('http') ? options.url : BASE_URL + options.url;
     const run = () => {
-    const token = getToken() || '08b01656-b2fc-476f-b2ae-78ef2abee2ac';
+    const token = getToken() || '705eba44-51a0-4139-8a36-8c846a2f8234';
     const headers: Record<string, string> = {
       server: '1',
       ...options.header as Record<string, string>,

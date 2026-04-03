@@ -29,6 +29,7 @@
           v-if="rewardId === 'custom'"
           v-model="customReward"
           class="custom-in"
+          type="text"
           placeholder="请输入您的自定义奖励..."
         />
       </view>
@@ -39,7 +40,12 @@
           <text class="hi">🤝</text>
           <text class="ht">约定</text>
         </view>
-        <input v-model="agreement" class="agreement-input" placeholder="例如：输的人请赢的人吃饭" />
+        <input
+          v-model="agreement"
+          class="agreement-input"
+          type="text"
+          placeholder="例如：输的人请赢的人吃饭"
+        />
         <view class="stake-options">
           <view
             v-for="o in agreements"
@@ -290,22 +296,21 @@ async function create() {
 }
 
 .custom-in {
+  @include form-control-base;
   margin-top: 16rpx;
-  width: 100%;
   padding: 20rpx;
   border: 2rpx solid #e0e0e0;
   border-radius: 16rpx;
-  font-size: 26rpx;
+  min-height: 88rpx;
 }
 
 .agreement-input {
-  width: 100%;
-  box-sizing: border-box;
+  @include form-control-base;
   padding: 20rpx;
   border: 2rpx solid #e0e0e0;
   border-radius: 16rpx;
   margin-bottom: 16rpx;
-  font-size: 28rpx;
+  min-height: 88rpx;
 }
 
 .stake-options {

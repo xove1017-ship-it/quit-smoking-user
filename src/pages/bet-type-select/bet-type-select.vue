@@ -178,12 +178,14 @@ function next() {
 }
 
 .number-input {
+  @include form-control-base;
   flex: 1;
+  min-width: 0;
   padding: 20rpx;
   border: 2rpx solid #e0e0e0;
   border-radius: 16rpx;
   text-align: center;
-  font-size: 30rpx;
+  min-height: 88rpx;
 }
 
 .input-label {

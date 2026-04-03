@@ -3,97 +3,64 @@
     <scroll-view scroll-y class="page-scroll" :show-scrollbar="false">
       <view class="page-header">
         <text class="page-title">戒烟小组</text>
-        <button class="create-btn" @click="goCreate">创建小组</button>
+        <button class="create-btn" type="button" @tap="goCreate">创建小组</button>
+      </view>
+
+      <view class="tabs">
+        <view class="tab-item" :class="{ active: activeTab === 'joined' }" @tap="activeTab = 'joined'">
+          <text class="tab-text">我加入的</text>
+          <text class="tab-badge">{{ joined.length }}</text>
+        </view>
+        <view class="tab-item" :class="{ active: activeTab === 'recommended' }" @tap="activeTab = 'recommended'">
+          <text class="tab-text">推荐</text>
+          <text class="tab-badge">{{ recommended.length }}</text>
+        </view>
       </view>
 
       <view class="group-list">
-        <view class="section-header">
-          <text class="section-title">👥 我加入的小组</text>
-          <view class="section-count">
-            <text>{{ joined.length }}个</text>
-          </view>
-        </view>
+        <view v-if="loading" class="loading-hint">加载中…</view>
 
-        <view
-          v-for="(g, idx) in joined"
-          :key="'j' + idx"
-          class="group-card"
-          @click="openGroup(g)"
-        >
-          <view class="group-header">
-            <view class="group-info">
-              <view class="group-icon">
-                <text>{{ g.icon }}</text>
-              </view>
-              <view class="group-details">
-                <text class="group-name">{{ g.name }}</text>
-                <text class="group-members">👥 {{ g.memberCount }}位成员</text>
-              </view>
-            </view>
-            <view class="group-status">
-              <text>{{ g.status }}</text>
-            </view>
+        <template v-else>
+          <view v-if="!currentList.length" class="empty-hint">
+            <text>{{ activeTab === 'joined' ? '暂无已加入的小组，可去「推荐」看看' : '暂无推荐小组' }}</text>
           </view>
-          <text class="group-description">{{ g.description }}</text>
-          <view class="group-stats">
-            <view class="stat-item">
-              <text class="stat-value">{{ g.rate }}</text>
-              <text class="stat-label">成功率</text>
-            </view>
-            <view class="stat-item">
-              <text class="stat-value">{{ g.todayCheckin }}</text>
-              <text class="stat-label">今日打卡</text>
-            </view>
-            <view class="stat-item">
-              <text class="stat-value">{{ g.newMsg }}</text>
-              <text class="stat-label">新消息</text>
-            </view>
-          </view>
-        </view>
 
-        <view class="section-header section-gap">
-          <text class="section-title">🌟 推荐小组</text>
-          <view class="section-count">
-            <text>{{ recommended.length }}个</text>
-          </view>
-        </view>
-
-        <view
-          v-for="(g, idx) in recommended"
-          :key="'r' + idx"
-          class="group-card"
-          @click="joinGroup(g)"
-        >
-          <view class="group-header">
-            <view class="group-info">
-              <view class="group-icon">
-                <text>{{ g.icon }}</text>
+          <view v-for="(g, idx) in currentList" :key="String(g.id ?? idx)" class="group-card" @tap="onCardTap(g)">
+            <view class="group-header">
+              <view class="group-info">
+                <image class="group-icon" :src="g.cover ?? ''" mode="scaleToFill">
+                </image>
+                <view class="group-details">
+                  <text class="group-name">{{ g.name ?? g.title ?? '小组' }}</text>
+                  <text class="group-members">
+                    👥 {{ g.member_count ?? g.members ?? g.memberCount ?? 0 }}位成员
+                  </text>
+                </view>
               </view>
-              <view class="group-details">
-                <text class="group-name">{{ g.name }}</text>
-                <text class="group-members">👥 {{ g.memberCount }}位成员</text>
+              <view class="group-status-wrap">
+                <view v-if="isPrivateGroupItem(g)" class="group-pill private">私密</view>
+                <view class="group-status" :class="{ 'status-join': activeTab === 'recommended' }">
+                  <text>{{ statusLabel(g) }}</text>
+                </view>
               </view>
             </view>
-            <view class="group-status status-join">
-              <text>可加入</text>
+            <text class="group-description">{{ g.description ?? g.desc ?? '' }}</text>
+            <view class="group-stats">
+              <view class="stat-item">
+                <text class="stat-value">{{ g.rate != null ? g.rate : '—' }}</text>
+                <text class="stat-label">成功率</text>
+              </view>
+              <view class="stat-item">
+                <text class="stat-value">{{ g.today_checkin ?? g.todayCheckin ?? 0 }}</text>
+                <text class="stat-label">今日打卡</text>
+              </view>
+              <view class="stat-item">
+                <text class="stat-value">{{ g.new_message_count ?? 0 }}</text>
+                <text class="stat-label">新消息</text>
+              </view>
             </view>
           </view>
-          <text class="group-description">{{ g.description }}</text>
-          <view class="group-stats">
-            <view class="stat-item">
-              <text class="stat-value">{{ g.rate }}</text>
-              <text class="stat-label">成功率</text>
-            </view>
-            <view class="stat-item">
-              <text class="stat-value">{{ g.todayCheckin }}</text>
-              <text class="stat-label">今日打卡</text>
-            </view>
-            <view class="stat-item">
-              <text class="stat-value">-</text>
-              <text class="stat-label">新消息</text>
-            </view>
-          </view>
-        </view>
+        </template>
       </view>
     </scroll-view>
     <AppTabBar :active="2" />
@@ -101,58 +68,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import AppTabBar from '../../components/AppTabBar.vue'
 import groupApi from '@/api/group'
 
-interface GroupItem {
-  id: string
-  name: string
-  icon: string
-  memberCount: number
-  status: string
-  description: string
-  rate: string
-  todayCheckin: number
-  newMsg: number | string
-}
-
-function mapRow(raw: Record<string, unknown>, isJoined: boolean): GroupItem {
-  return {
-    id: String(raw.id ?? ''),
-    name: String(raw.name ?? raw.title ?? '小组'),
-    icon: '👥',
-    memberCount: Number(raw.member_count ?? raw.members ?? raw.memberCount ?? 0),
-    status: isJoined ? '已加入' : '可加入',
-    description: String(raw.description ?? raw.desc ?? ''),
-    rate: raw.rate != null ? String(raw.rate) : '—',
-    todayCheckin: Number(raw.today_checkin ?? raw.todayCheckin ?? 0),
-    newMsg: '-',
-  }
-}
-
-const joined = ref<GroupItem[]>([])
-const recommended = ref<GroupItem[]>([])
+const joined = ref<Record<string, unknown>[]>([])
+const recommended = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
+const activeTab = ref<'joined' | 'recommended'>('joined')
+
+const currentList = computed(() =>
+  activeTab.value === 'joined' ? joined.value : recommended.value,
+)
 
 function loadGroups() {
   loading.value = true
-  groupApi
-    .index({ page: 1, limit: 50 })
-    .then((res) => {
-      const list = (res.data as { list?: Record<string, unknown>[] })?.list || []
-      const j: GroupItem[] = []
-      const r: GroupItem[] = []
-      for (const raw of list) {
-        const isJ = !!(raw.joined ?? raw.is_joined ?? raw.is_member ?? raw.my_joined)
-        const row = mapRow(raw, isJ)
-        if (isJ) j.push(row)
-        else r.push(row)
-      }
-      joined.value = j
-      recommended.value = r
-    })
+  Promise.all([
+    groupApi.index({ page: 1, limit: 50, type: 'joined' }).then((res) => {
+      const list = (res.data as { list?: Record<string, unknown>[] } | undefined)?.list
+      joined.value = Array.isArray(list) ? list : []
+    }),
+    groupApi.index({ page: 1, limit: 50, type: 'recommended' }).then((res) => {
+      const list = (res.data as { list?: Record<string, unknown>[] } | undefined)?.list
+      recommended.value = Array.isArray(list) ? list : []
+    }),
+  ])
+    .catch(() => { })
     .finally(() => {
       loading.value = false
     })
@@ -166,24 +108,51 @@ function goCreate() {
   uni.navigateTo({ url: '/pages/group-create/group-create' })
 }
 
-function openGroup(g: GroupItem) {
-  const q = `name=${encodeURIComponent(g.name)}&icon=${encodeURIComponent(g.icon)}&id=${g.id}`
+function isPrivateGroupItem(g: Record<string, unknown>) {
+  return g.visibility === 'private' || g.requires_invite === true
+}
+
+/** 推荐列表：私密小组需进详情填邀请码；公开小组可一键确认加入 */
+function statusLabel(g: Record<string, unknown>) {
+  if (activeTab.value === 'joined') return '已加入'
+  return isPrivateGroupItem(g) ? '邀请码加入' : '可加入'
+}
+
+function onCardTap(g: Record<string, unknown>) {
+  if (activeTab.value === 'joined') {
+    openGroup(g)
+    return
+  }
+  if (isPrivateGroupItem(g)) {
+    openGroup(g)
+    return
+  }
+  joinGroup(g)
+}
+
+function openGroup(g: Record<string, unknown>) {
+  const id = String(g.id ?? '')
+  const name = String(g.name ?? g.title ?? '小组')
+  const q = `name=${encodeURIComponent(name)}&icon=${encodeURIComponent('👥')}&id=${encodeURIComponent(id)}`
   uni.navigateTo({ url: `/pages/group-detail/group-detail?${q}` })
 }
 
-function joinGroup(g: GroupItem) {
+function joinGroup(g: Record<string, unknown>) {
+  const id = String(g.id ?? '')
+  const name = String(g.name ?? g.title ?? '小组')
   uni.showModal({
     title: '加入小组',
-    content: `确定要加入「${g.name}」吗？`,
+    content: `确定要加入「${name}」吗？`,
     success(res) {
       if (!res.confirm) return
       groupApi
-        .join(g.id)
+        .join(id)
         .then(() => {
           uni.showToast({ title: '加入成功', icon: 'success' })
+          activeTab.value = 'joined'
           loadGroups()
         })
-        .catch(() => {})
+        .catch(() => { })
     },
   })
 }
@@ -230,33 +199,57 @@ function joinGroup(g: GroupItem) {
   font-weight: 600;
 }
 
+.tabs {
+  display: flex;
+  background: #fff;
+  padding: 0 24rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 24rpx 16rpx;
+  position: relative;
+  color: $color-text-sub;
+  font-size: 30rpx;
+}
+
+.tab-item.active {
+  color: $color-primary;
+  font-weight: 600;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 0;
+  height: 4rpx;
+  border-radius: 4rpx 4rpx 0 0;
+  background: $color-primary;
+}
+
+.tab-badge {
+  font-size: 24rpx;
+  color: inherit;
+  opacity: 0.85;
+}
+
 .group-list {
   padding: 24rpx;
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24rpx;
-}
-
-.section-gap {
-  margin-top: 48rpx;
-}
-
-.section-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: $color-text;
-}
-
-.section-count {
-  font-size: 24rpx;
+.loading-hint,
+.empty-hint {
+  text-align: center;
+  padding: 48rpx 24rpx;
+  font-size: 28rpx;
   color: $color-text-sub;
-  background: $color-bg;
-  padding: 8rpx 16rpx;
-  border-radius: 24rpx;
 }
 
 .group-card {
@@ -284,10 +277,6 @@ function joinGroup(g: GroupItem) {
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  background: $color-primary;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: #fff;
   font-size: 36rpx;
   flex-shrink: 0;
@@ -311,13 +300,31 @@ function joinGroup(g: GroupItem) {
   color: $color-text-sub;
 }
 
+.group-status-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.group-pill {
+  font-size: 22rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 20rpx;
+  color: #fff;
+}
+
+.group-pill.private {
+  background: #8e44ad;
+}
+
 .group-status {
   font-size: 24rpx;
   padding: 8rpx 16rpx;
   border-radius: 24rpx;
   background: $color-warn;
   color: #fff;
-  flex-shrink: 0;
 }
 
 .group-status.status-join {

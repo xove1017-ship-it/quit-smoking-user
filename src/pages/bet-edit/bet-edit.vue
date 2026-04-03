@@ -14,6 +14,7 @@
       <input
         v-model="agreement"
         class="input"
+        type="text"
         :class="{ focused: focusField === 'agreement' }"
         placeholder="例如：输的人请赢的人吃饭"
         @focus="focusField = 'agreement'"
@@ -140,13 +141,12 @@ function confirm() {
 }
 
 .input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 22rpx 24rpx;
+  @include form-control-base;
+  padding: 20rpx 24rpx;
   border-radius: 16rpx;
   border: 2rpx solid #e0e0e0;
-  font-size: 28rpx;
   margin-bottom: 20rpx;
+  min-height: 88rpx;
   transition:
     border-color 0.25s ease,
     box-shadow 0.25s ease;

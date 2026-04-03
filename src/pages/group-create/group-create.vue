@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <scroll-view scroll-y class="scroll" :show-scrollbar="false">
+    <view class="scroll">
       <view class="create-form">
         <view class="form-section">
           <text class="section-title">📋 小组基本信息</text>
@@ -9,21 +9,25 @@
             <input
               v-model="groupName"
               class="form-input"
+              type="text"
               placeholder="例如：戒烟互助群"
               maxlength="20"
+              confirm-type="done"
             />
           </view>
           <view class="form-group">
             <text class="form-label">小组图标</text>
-            <view class="icon-options">
+            <view v-if="iconsLoading" class="icon-loading">加载预设图标中…</view>
+            <view v-else-if="!iconUrls.length" class="icon-empty">暂无预设图标，可不选封面</view>
+            <view v-else class="icon-options">
               <view
-                v-for="ic in icons"
-                :key="ic"
+                v-for="(url, idx) in iconUrls"
+                :key="url + idx"
                 class="icon-option"
-                :class="{ selected: selectedIcon === ic }"
-                @click="selectIcon(ic)"
+                :class="{ selected: selectedCoverUrl === url }"
+                @tap="selectedCoverUrl = url"
               >
-                <text>{{ ic }}</text>
+                <image class="icon-img" :src="url" mode="aspectFill" />
               </view>
             </view>
           </view>
@@ -33,6 +37,9 @@
               v-model="groupDescription"
               class="form-textarea"
               placeholder="请简单描述小组的宗旨和目标..."
+              :maxlength="500"
+              :adjust-position="true"
+              :cursor-spacing="24"
             />
           </view>
         </view>
@@ -56,7 +63,7 @@
                 @click="privacy = 'private'"
               >
                 <text class="privacy-title">私密小组</text>
-                <text class="privacy-desc">需要邀请加入</text>
+                <text class="privacy-desc">加入需填写邀请码（创建后由系统生成）</text>
               </view>
             </view>
           </view>
@@ -75,33 +82,32 @@
         </view>
 
         <view class="form-section">
-          <text class="section-title">👥 邀请初始成员</text>
-          <view class="form-group">
-            <text class="form-label">邀请好友</text>
-            <input
-              v-model="inviteFriends"
-              class="form-input"
-              placeholder="输入好友用户名，多个用逗号分隔"
-            />
-          </view>
-          <text class="form-tip">注：创建小组后，您将成为小组管理员，可以管理成员和设置</text>
+          <text class="section-title">👥 创建说明</text>
+          <text class="form-tip">
+            创建后您将成为小组管理员。私密小组的邀请码由服务端自动生成，无需自填；可在小组详情页复制分享给好友。
+          </text>
         </view>
       </view>
 
-      <button class="submit-btn" :disabled="!canSubmit" @click="createGroup">创建小组</button>
-    </scroll-view>
+      <button class="submit-btn" type="button" :disabled="!canSubmit" @tap="createGroup">
+        创建小组
+      </button>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import groupApi from '@/api/group'
+import api from '@/utils/api'
 
-const icons = ['💪', '🏆', '🚭', '🌱', '💚', '🌟', '🔥', '🌈']
-const selectedIcon = ref('💪')
+const iconUrls = ref<string[]>([])
+const iconsLoading = ref(true)
+/** 选中的预设封面 URL，与 POST /quit/group/save 的 cover 一致 */
+const selectedCoverUrl = ref('')
 const groupName = ref('')
 const groupDescription = ref('')
 const privacy = ref<'public' | 'private'>('public')
-const inviteFriends = ref('')
 
 const maxOpts = [
   { value: '20', label: '20人' },
@@ -120,13 +126,34 @@ const checkInOpts = [
 const checkIndex = ref(1)
 const checkLabel = computed(() => checkInOpts[checkIndex.value].label)
 
+const submitting = ref(false)
+
 const canSubmit = computed(() => {
-  return !!(groupName.value.trim() && groupDescription.value.trim() && selectedIcon.value && privacy.value)
+  return !!(
+    !submitting.value &&
+    !iconsLoading.value &&
+    groupName.value.trim() &&
+    groupDescription.value.trim() &&
+    privacy.value
+  )
 })
 
-function selectIcon(ic: string) {
-  selectedIcon.value = ic
-}
+onMounted(() => {
+  iconsLoading.value = true
+  api
+    .groupIcons()
+    .then((res) => {
+      const list = (res.data as { icons?: string[] } | undefined)?.icons
+      iconUrls.value = Array.isArray(list) ? list.filter((u) => typeof u === 'string' && u) : []
+      if (iconUrls.value.length && !selectedCoverUrl.value) {
+        selectedCoverUrl.value = iconUrls.value[0]
+      }
+    })
+    .catch(() => {})
+    .finally(() => {
+      iconsLoading.value = false
+    })
+})
 
 function onMaxPick(e: { detail: { value: string } }) {
   maxIndex.value = Number(e.detail.value)
@@ -145,11 +172,71 @@ function createGroup() {
     uni.showToast({ title: '请输入小组描述', icon: 'none' })
     return
   }
-  uni.showToast({ title: '创建成功', icon: 'success' })
-  setTimeout(() => {
-    const q = `name=${encodeURIComponent(groupName.value)}&icon=${encodeURIComponent(selectedIcon.value)}`
-    uni.redirectTo({ url: `/pages/group-detail/group-detail?${q}` })
-  }, 600)
+  submitting.value = true
+  const maxVal = Number(maxOpts[maxIndex.value].value)
+  const checkVal = String(checkInOpts[checkIndex.value].value)
+  groupApi
+    .save({
+      name: groupName.value.trim(),
+      description: groupDescription.value.trim(),
+      visibility: privacy.value,
+      max_members: maxVal,
+      checkin_rule: checkVal,
+      ...(selectedCoverUrl.value ? { cover: selectedCoverUrl.value } : {}),
+    })
+    .then((res) => {
+      const raw = (res.data || {}) as {
+        id?: number | string
+        visibility?: string
+        invite_code?: string | null
+      }
+      const newId = raw.id != null ? String(raw.id) : ''
+      const isPrivate = raw.visibility === 'private' || privacy.value === 'private'
+      const code =
+        raw.invite_code != null && String(raw.invite_code).trim() !== ''
+          ? String(raw.invite_code).trim()
+          : ''
+
+      const goDetail = () => {
+        const coverQ = selectedCoverUrl.value
+          ? `&cover=${encodeURIComponent(selectedCoverUrl.value)}`
+          : ''
+        const q = newId
+          ? `id=${encodeURIComponent(newId)}&name=${encodeURIComponent(groupName.value)}&icon=${encodeURIComponent('👥')}${coverQ}`
+          : `name=${encodeURIComponent(groupName.value)}&icon=${encodeURIComponent('👥')}${coverQ}`
+        uni.redirectTo({ url: `/pages/group-detail/group-detail?${q}` })
+      }
+
+      if (isPrivate && code) {
+        uni.showModal({
+          title: '创建成功',
+          content: `私密小组邀请码（请妥善保存）：\n${code}`,
+          confirmText: '复制邀请码',
+          cancelText: '进入小组',
+          success(modalRes) {
+            if (modalRes.confirm) {
+              uni.setClipboardData({
+                data: code,
+                success() {
+                  uni.showToast({ title: '已复制', icon: 'none' })
+                  setTimeout(goDetail, 300)
+                },
+                fail: goDetail,
+              })
+            } else {
+              goDetail()
+            }
+          },
+        })
+      } else {
+        uni.showToast({ title: '创建成功', icon: 'success' })
+        setTimeout(goDetail, 400)
+      }
+    })
+    .catch(() => {})
+    .finally(() => {
+      submitting.value = false
+    })
 }
 </script>
 
@@ -162,8 +249,7 @@ function createGroup() {
 }
 
 .scroll {
-  height: 100vh;
-  box-sizing: border-box;
+  @include form-page-scroll;
   padding: 24rpx;
   padding-bottom: 48rpx;
 }
@@ -202,16 +288,26 @@ function createGroup() {
 .form-input,
 .form-textarea,
 .picker-like {
-  width: 100%;
-  padding: 22rpx 28rpx;
+  @include form-control-base;
+  padding: 20rpx 28rpx;
   border: 1rpx solid #ddd;
   border-radius: 16rpx;
-  font-size: 28rpx;
-  box-sizing: border-box;
+}
+
+.form-input {
+  min-height: 88rpx;
 }
 
 .form-textarea {
-  min-height: 160rpx;
+  min-height: 200rpx;
+  resize: none;
+}
+
+.icon-loading,
+.icon-empty {
+  font-size: 26rpx;
+  color: $color-text-sub;
+  padding: 16rpx 0;
 }
 
 .icon-options {
@@ -221,19 +317,27 @@ function createGroup() {
 }
 
 .icon-option {
+  width: 96rpx;
   height: 96rpx;
+  justify-self: center;
   border-radius: 50%;
   background: $color-bg;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40rpx;
-  border: 2rpx solid transparent;
+  border: 4rpx solid transparent;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.icon-img {
+  width: 100%;
+  height: 100%;
 }
 
 .icon-option.selected {
-  background: $color-primary;
   border-color: $color-primary;
+  background: rgba(26, 188, 156, 0.12);
 }
 
 .privacy-options {

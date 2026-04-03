@@ -4,8 +4,17 @@
       <!-- 用户信息卡片（与原型 profile.html 一致） -->
       <view class="user-card">
         <view class="user-avatar-wrap">
-          <view class="user-avatar">
-            <image v-if="avatarUrl" class="avatar-img" :src="avatarUrl" mode="aspectFill" />
+          <view
+            class="user-avatar"
+            hover-class="user-avatar-hover"
+            @tap="onChangeAvatar"
+          >
+            <image
+              v-if="avatarDisplaySrc"
+              class="avatar-img"
+              :src="avatarDisplaySrc"
+              mode="aspectFill"
+            />
             <text v-else class="avatar-emoji">👤</text>
           </view>
           <view class="vip-badge" :class="vipClass">
@@ -143,8 +152,8 @@
           v-model="nickDraft"
           class="nick-input"
           type="nickname"
-          maxlength="16"
-          placeholder="请输入昵称"
+          maxlength="50"
+          placeholder="1～50 个字符，汉字、字母、数字、_、-"
         />
         <view class="nick-actions">
           <button class="nick-btn cancel" @tap="closeNickEdit">取消</button>
@@ -156,16 +165,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { onShow } from "@dcloudio/uni-app";
 import AppTabBar from "../../components/AppTabBar.vue";
 import { clearLoginSession } from "../../utils/auth";
 import api from "@/utils/api";
-
-const NICK_KEY = "profile_display_name";
+import config from "@/config/env";
 
 const defaultName = "戒烟小能手";
 const displayName = ref(defaultName);
+/** 接口返回的头像字段（可能为相对路径） */
 const avatarUrl = ref("");
 const vipLabel = ref("会员");
 const vipClass = ref("silver");
@@ -181,6 +190,36 @@ const nickDraft = ref("");
 const feedbackVisible = ref(false);
 const feedbackDraft = ref("");
 
+const avatarDisplaySrc = computed(() => resolveAvatarUrl(avatarUrl.value));
+
+function resolveAvatarUrl(raw: string): string {
+  const t = typeof raw === "string" ? raw.trim() : "";
+  if (!t) return "";
+  if (t.startsWith("http") || t.startsWith("//")) {
+    return t.startsWith("//") ? `https:${t}` : t;
+  }
+  return `${config.basePath}${t.startsWith("/") ? "" : "/"}${t}`;
+}
+
+function applyUserProfile(u: Record<string, unknown>) {
+  if (u.nickname != null && String(u.nickname).trim() !== "") {
+    displayName.value = String(u.nickname).trim();
+  }
+  if (u.avatar !== undefined && u.avatar !== null) {
+    avatarUrl.value = String(u.avatar).trim();
+  }
+  const vl = String(u.vip_level ?? "none");
+  vipLabel.value =
+    vl === "rainbow"
+      ? "彩虹"
+      : vl === "gold"
+        ? "黄金"
+        : vl === "silver"
+          ? "白银"
+          : "会员";
+  vipClass.value = tierToClass(vl === "none" ? "silver" : vl);
+}
+
 function tierToClass(tier: string): string {
   if (tier === "rainbow") return "rainbow";
   if (tier === "gold") return "gold";
@@ -189,24 +228,10 @@ function tierToClass(tier: string): string {
 }
 
 function loadProfileData() {
-  const saved = uni.getStorageSync(NICK_KEY) as string | undefined;
-  if (saved) displayName.value = saved;
-
   Promise.all([api.userProfile(), api.achievementIndex()])
     .then(([userRes, achRes]) => {
       const u = (userRes.data || {}) as Record<string, unknown>;
-      if (u.nickname) displayName.value = String(u.nickname);
-      if (u.avatar) avatarUrl.value = String(u.avatar);
-      const vl = String(u.vip_level ?? "none");
-      vipLabel.value =
-        vl === "rainbow"
-          ? "彩虹"
-          : vl === "gold"
-            ? "黄金"
-            : vl === "silver"
-              ? "白银"
-              : "会员";
-      vipClass.value = tierToClass(vl === "none" ? "silver" : vl);
+      applyUserProfile(u);
 
       const ad = (achRes.data || {}) as Record<string, unknown>;
       const list = (ad.medals as Record<string, unknown>[]) || [];
@@ -262,10 +287,50 @@ function saveNickname() {
     uni.showToast({ title: "昵称不能为空", icon: "none" });
     return;
   }
-  displayName.value = name;
-  uni.setStorageSync(NICK_KEY, name);
-  nickEditVisible.value = false;
-  uni.showToast({ title: "昵称已更新", icon: "success" });
+  if (name.length > 50) {
+    uni.showToast({ title: "昵称最长 50 个字符", icon: "none" });
+    return;
+  }
+  if (!/^[\u4e00-\u9fa5A-Za-z0-9_-]+$/.test(name)) {
+    uni.showToast({ title: "仅支持汉字、字母、数字、_、-", icon: "none" });
+    return;
+  }
+  uni.showLoading({ title: "保存中", mask: true });
+  api
+    .userProfileSave({ nickname: name })
+    .then((res) => {
+      applyUserProfile((res.data || {}) as Record<string, unknown>);
+      nickEditVisible.value = false;
+      uni.showToast({ title: res.msg || "资料更新成功", icon: "success" });
+    })
+    .catch(() => {})
+    .finally(() => {
+      uni.hideLoading();
+    });
+}
+
+function onChangeAvatar() {
+  uni.chooseImage({
+    count: 1,
+    sizeType: ["compressed"],
+    sourceType: ["album", "camera"],
+    success(res) {
+      const p = res.tempFilePaths[0];
+      if (!p) return;
+      uni.showLoading({ title: "上传中", mask: true });
+      api
+        .uploadMemberFile(p)
+        .then((rel) => api.userProfileSave({ avatar: rel }))
+        .then((saveRes) => {
+          applyUserProfile((saveRes.data || {}) as Record<string, unknown>);
+          uni.showToast({ title: saveRes.msg || "资料更新成功", icon: "success" });
+        })
+        .catch(() => {})
+        .finally(() => {
+          uni.hideLoading();
+        });
+    },
+  });
 }
 
 function onHelp() {
@@ -369,6 +434,10 @@ function onLogout() {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.user-avatar-hover {
+  opacity: 0.88;
 }
 
 .avatar-emoji {
@@ -629,23 +698,25 @@ function onLogout() {
 }
 
 .nick-input {
-  height: 80rpx;
+  @include form-control-base;
+  height: 88rpx;
   padding: 0 24rpx;
   margin-bottom: 32rpx;
   background: $color-bg;
   border-radius: 12rpx;
-  font-size: 28rpx;
+  border: none;
 }
 
 .feedback-area {
+  @include form-control-base;
   width: 100%;
   min-height: 200rpx;
   padding: 20rpx;
   margin-bottom: 32rpx;
   background: $color-bg;
   border-radius: 12rpx;
-  font-size: 28rpx;
-  box-sizing: border-box;
+  border: none;
+  resize: none;
 }
 
 .nick-actions {

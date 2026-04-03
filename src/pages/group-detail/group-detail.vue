@@ -2,8 +2,16 @@
   <view class="page">
     <scroll-view scroll-y class="scroll" :show-scrollbar="false">
       <view class="toolbar">
-        <button class="tool-btn warn" @click="goInvite">邀请</button>
-        <button class="tool-btn primary" @click="shareGroup">分享</button>
+        <view class="toolbar-left">
+          <button v-if="!joined" class="tool-btn primary" @click="confirmJoin">
+            {{ isPrivateGroup ? '验证邀请码并加入' : '加入小组' }}
+          </button>
+          <button v-else class="tool-btn ghost" @click="confirmLeave">退出小组</button>
+        </view>
+        <view class="toolbar-right">
+          <button class="tool-btn warn" @click="goInvite">邀请</button>
+          <button class="tool-btn primary" @click="shareGroup">分享</button>
+        </view>
       </view>
 
       <view v-if="loading" class="loading-hint">加载中…</view>
@@ -17,45 +25,83 @@
           <view class="group-details">
             <text class="group-name">{{ groupName }}</text>
             <text class="group-members">👥 {{ memberCount }}位成员</text>
-            <view v-if="joined" class="group-status-pill ok">
-              <text>已加入</text>
-            </view>
-            <view v-else class="group-status-pill">
-              <text>未加入</text>
+            <view class="group-pills">
+              <view v-if="isPrivateGroup" class="group-status-pill private">
+                <text>私密</text>
+              </view>
+              <view v-if="joined" class="group-status-pill ok">
+                <text>已加入</text>
+              </view>
+              <view v-else class="group-status-pill">
+                <text>未加入</text>
+              </view>
             </view>
           </view>
         </view>
         <text class="group-description">{{ groupDesc }}</text>
+
+        <view v-if="joined && adminInviteCode" class="invite-code-banner">
+          <text class="invite-code-label">小组邀请码（仅管理员可见）</text>
+          <view class="invite-code-row">
+            <text class="invite-code-text">{{ adminInviteCode }}</text>
+            <button class="invite-copy-btn" type="button" @tap="copyAdminInviteCode">复制</button>
+          </view>
+          <text class="invite-code-hint">分享给好友，加入私密小组时需填写此邀请码</text>
+        </view>
+
+        <view v-if="!joined && isPrivateGroup" class="join-invite-block">
+          <text class="join-invite-label">私密小组需填写邀请码</text>
+          <input
+            v-model="inviteCodeInput"
+            class="join-invite-input"
+            type="text"
+            maxlength="32"
+            placeholder="请输入组长提供的邀请码"
+            confirm-type="done"
+          />
+        </view>
+
         <view class="group-stats">
           <view class="stat-item">
-            <text class="stat-value">{{ statRankLabel }}</text>
-            <text class="stat-label">连续天数排名</text>
+            <text class="stat-value">{{ statSevenDay }}</text>
+            <text class="stat-label">七日成功率</text>
           </view>
           <view class="stat-item">
-            <text class="stat-value">{{ statToday }}</text>
-            <text class="stat-label">动态条数</text>
+            <text class="stat-value">{{ statTodayCheckin }}</text>
+            <text class="stat-label">今日打卡人数</text>
           </view>
           <view class="stat-item">
-            <text class="stat-value">{{ memberCount }}</text>
-            <text class="stat-label">成员数</text>
+            <text class="stat-value">{{ statNewMsg }}</text>
+            <text class="stat-label">新消息</text>
           </view>
         </view>
-        <button class="checkin-full" @click="goCheckin">去今日打卡</button>
+        <button v-if="joined" class="checkin-full" @click="navToGroupCheckin">今日小组打卡</button>
+        <view v-else class="checkin-hint">加入小组后可查看组内打卡统计</view>
       </view>
 
       <view v-if="!loading" class="members-section">
         <view class="section-title-row">
           <text class="section-title">👥 小组成员</text>
-          <text class="section-meta">{{ memberCount }}人 · 按连续无烟天排序</text>
+          <text class="section-meta">{{ memberCount }}人 · 当日打卡状态</text>
         </view>
-        <view v-if="!membersShow.length" class="empty-hint">暂无成员数据</view>
+        <view v-if="!members.length" class="empty-hint">暂无成员数据</view>
         <view v-else class="members-grid">
-          <view v-for="(m, i) in membersShow" :key="i" class="member-item">
+          <view
+            v-for="(m, i) in members"
+            :key="String(m.user_id ?? m.uid ?? i)"
+            class="member-item"
+          >
             <view class="member-avatar">
-              <text>{{ m.av }}</text>
+              <image
+                v-if="memberAvatarUrl(m)"
+                class="member-avatar-img"
+                :src="memberAvatarUrl(m)"
+                mode="aspectFill"
+              />
+              <text v-else>{{ pickAv(memberName(m)) }}</text>
             </view>
-            <text class="member-name">{{ m.name }}</text>
-            <text class="member-status">{{ m.status }}</text>
+            <text class="member-name">{{ memberName(m) }}</text>
+            <text class="member-status">{{ memberStatusLine(m) }}</text>
           </view>
         </view>
       </view>
@@ -64,7 +110,7 @@
         <view class="section-title-row">
           <text class="section-title">📝 最新动态</text>
           <view class="activity-head-right">
-            <text class="section-meta">{{ activities.length }}条</text>
+            <text class="section-meta">{{ postsTotal }}条</text>
             <button class="mini-post" @click="goPost">发布动态</button>
           </view>
         </view>
@@ -72,14 +118,33 @@
         <view v-else class="activity-list">
           <view v-for="(a, ai) in activities" :key="ai" class="activity-item">
             <view class="activity-avatar">
-              <text>{{ a.av }}</text>
+              <image
+                v-if="a.avatarUrl"
+                class="activity-avatar-img"
+                :src="a.avatarUrl"
+                mode="aspectFill"
+              />
+              <text v-else>{{ a.av }}</text>
             </view>
             <view class="activity-content">
               <view class="activity-header">
-                <text class="activity-user">{{ a.user }}</text>
+                <view class="activity-user-row">
+                  <text v-if="a.postTag" class="post-type-tag">{{ a.postTag }}</text>
+                  <text class="activity-user">{{ a.user }}</text>
+                </view>
                 <text class="activity-time">{{ a.time }}</text>
               </view>
-              <text class="activity-text">{{ a.text }}</text>
+              <text v-if="a.text" class="activity-text">{{ a.text }}</text>
+              <view v-if="a.images?.length" class="activity-images">
+                <image
+                  v-for="(img, ii) in a.images"
+                  :key="ii"
+                  class="activity-thumb"
+                  :src="img"
+                  mode="aspectFill"
+                  @click="previewImg(a.images!, ii)"
+                />
+              </view>
             </view>
           </view>
         </view>
@@ -89,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import groupApi from '@/api/group'
 
@@ -101,36 +166,97 @@ const groupDesc = ref('')
 const coverUrl = ref('')
 const memberCount = ref(0)
 const joined = ref(false)
-const statRankLabel = ref('—')
-const statToday = ref('—')
+/** 详情接口 `data.stats`，与后端字段一致 */
+const stats = ref<Record<string, unknown> | null>(null)
+/** 详情接口 `data.members`，后端已排序、限条数 */
+const members = ref<Record<string, unknown>[]>([])
 
-interface MemRow {
-  av: string
-  name: string
-  status: string
-}
+/** 来自 `group.visibility` / `requires_invite` */
+const groupVisibility = ref<string>('')
+const requiresInvite = ref(false)
+/** 组长且私密时详情接口返回，用于复制分享 */
+const adminInviteCode = ref('')
+/** 未加入私密小组时，用户输入的邀请码 */
+const inviteCodeInput = ref('')
 
-const membersShow = ref<MemRow[]>([])
+const isPrivateGroup = computed(() => {
+  if (groupVisibility.value === 'private') return true
+  return requiresInvite.value === true
+})
+
+const statSevenDay = computed(() => {
+  const r = stats.value?.seven_day_success_rate
+  if (r == null) return '—'
+  return `${Number(r).toFixed(1)}%`
+})
+const statTodayCheckin = computed(() => {
+  const n = stats.value?.today_checkin
+  return n != null ? String(n) : '—'
+})
+const statNewMsg = computed(() => {
+  const n = stats.value?.new_message_count
+  return n != null ? String(n) : '—'
+})
 
 interface Act {
   av: string
   user: string
   time: string
   text: string
+  images?: string[]
+  avatarUrl?: string
+  postTag?: string
 }
 
 const activities = ref<Act[]>([])
+const postsTotal = ref(0)
 
 function pickAv(n: unknown): string {
   const s = String(n ?? '?').trim()
   return s.slice(0, 1) || '?'
 }
 
-function sortMembers(list: Record<string, unknown>[]): Record<string, unknown>[] {
-  return [...list].sort(
-    (a, b) =>
-      Number(b.streak_days ?? b.streak ?? 0) - Number(a.streak_days ?? a.streak ?? 0),
-  )
+function memberName(m: Record<string, unknown>) {
+  return String(m.nickname ?? m.name ?? '成员')
+}
+
+function memberAvatarUrl(m: Record<string, unknown>): string {
+  const s = typeof m.avatar === 'string' ? m.avatar.trim() : ''
+  if (!s) return ''
+  if (s.startsWith('http')) return s
+  if (s.startsWith('//')) return `https:${s}`
+  return ''
+}
+
+/** 展示用：后端已给 today_checkin_status、checkin_time */
+function memberStatusLine(m: Record<string, unknown>): string {
+  const st = String(m.today_checkin_status ?? '')
+  const ti =
+    m.checkin_time != null && String(m.checkin_time) !== '' ? String(m.checkin_time) : ''
+  if (st === 'success') return ti ? `${ti} · 无烟` : '无烟'
+  if (st === 'fail') return ti ? `${ti} · 吸烟` : '吸烟'
+  if (st === 'pending') return '待打卡'
+  return '—'
+}
+
+function postTypeLabel(t: unknown): string {
+  const s = String(t ?? '')
+  if (s === 'checkin_success') return '打卡'
+  if (s === 'checkin_relapse') return '提醒'
+  if (s === 'user' || !s) return ''
+  return s.length > 4 ? s.slice(0, 4) : s
+}
+
+function normalizeImages(raw: unknown): string[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) {
+    return raw.map((x) => String(x)).filter((u) => u.startsWith('http') || u.startsWith('//'))
+  }
+  return []
+}
+
+function previewImg(urls: string[], current: number) {
+  uni.previewImage({ urls, current: urls[current] })
 }
 
 function loadDetail() {
@@ -152,32 +278,37 @@ function loadDetail() {
       memberCount.value = Number(g.member_count ?? g.members ?? 0) || 0
       joined.value = !!d.joined
 
-      const raw = (d.members as Record<string, unknown>[]) || []
-      const sorted = sortMembers(raw)
-      const topStreak = sorted.length
-        ? Number(sorted[0].streak_days ?? sorted[0].streak ?? 0)
-        : 0
-      statRankLabel.value = topStreak > 0 ? `最高${topStreak}天` : '—'
+      groupVisibility.value = typeof g.visibility === 'string' ? g.visibility : ''
+      requiresInvite.value = g.requires_invite === true
+      const codeRaw = g.invite_code
+      adminInviteCode.value =
+        codeRaw != null && String(codeRaw).trim() !== '' ? String(codeRaw).trim() : ''
 
-      membersShow.value = sorted.slice(0, 12).map((m) => ({
-        av: pickAv(m.nickname ?? m.name ?? m.user_id),
-        name: String(m.nickname ?? m.name ?? '成员'),
-        status:
-          m.streak_days != null
-            ? `连续${m.streak_days}天`
-            : m.today_status != null
-              ? String(m.today_status)
-              : '—',
-      }))
+      stats.value = d.stats && typeof d.stats === 'object' ? (d.stats as Record<string, unknown>) : null
+      members.value = (d.members as Record<string, unknown>[]) || []
 
-      const list = ((pRes.data || {}) as { list?: Record<string, unknown>[] }).list || []
-      statToday.value = String(list.length)
-      activities.value = list.map((row) => ({
-        av: pickAv(row.nickname ?? row.user_name ?? row.uid),
-        user: String(row.nickname ?? row.user_name ?? '成员'),
-        time: String(row.created_at ?? row.time ?? row.date ?? ''),
-        text: String(row.content ?? row.text ?? ''),
-      }))
+      const pData = (pRes.data || {}) as {
+        list?: Record<string, unknown>[]
+        total?: number
+      }
+      const list = pData.list || []
+      postsTotal.value = pData.total != null ? Number(pData.total) : list.length
+      activities.value = list.map((row) => {
+        const nick = String(row.nickname ?? row.user_name ?? '成员')
+        const avRaw = typeof row.avatar === 'string' ? row.avatar.trim() : ''
+        const avatarUrl =
+          avRaw && (avRaw.startsWith('http') || avRaw.startsWith('//')) ? avRaw : ''
+        const tag = postTypeLabel(row.post_type)
+        return {
+          av: pickAv(nick),
+          avatarUrl,
+          user: nick,
+          time: String(row.created_at ?? row.time ?? row.date ?? ''),
+          text: String(row.content ?? row.text ?? ''),
+          images: normalizeImages(row.images),
+          postTag: tag,
+        }
+      })
     })
     .catch(() => {
       /* request 已 toast */
@@ -191,6 +322,9 @@ onLoad((q?: Record<string, string>) => {
   if (q?.id) groupId.value = String(q.id)
   if (q?.name) groupName.value = decodeURIComponent(String(q.name))
   if (q?.icon) groupIcon.value = decodeURIComponent(String(q.icon))
+  if (q?.cover) coverUrl.value = decodeURIComponent(String(q.cover))
+  const ic = q?.invite_code ?? q?.invite
+  if (ic) inviteCodeInput.value = decodeURIComponent(String(ic)).trim()
 })
 
 onShow(() => {
@@ -199,17 +333,79 @@ onShow(() => {
 })
 
 function goInvite() {
-  const q = `name=${encodeURIComponent(groupName.value)}&icon=${encodeURIComponent(groupIcon.value)}`
+  const q = `id=${encodeURIComponent(groupId.value)}&name=${encodeURIComponent(groupName.value)}&icon=${encodeURIComponent(groupIcon.value)}`
   uni.navigateTo({ url: `/pages/group-invite/group-invite?${q}` })
+}
+
+function copyAdminInviteCode() {
+  if (!adminInviteCode.value) return
+  uni.setClipboardData({
+    data: adminInviteCode.value,
+    success() {
+      uni.showToast({ title: '已复制邀请码', icon: 'none' })
+    },
+  })
+}
+
+function confirmJoin() {
+  if (!groupId.value) {
+    uni.showToast({ title: '缺少小组ID', icon: 'none' })
+    return
+  }
+  if (isPrivateGroup.value) {
+    const code = inviteCodeInput.value.trim()
+    if (!code) {
+      uni.showToast({ title: '私密小组需填写邀请码', icon: 'none' })
+      return
+    }
+    groupApi
+      .join(groupId.value, code)
+      .then(() => {
+        uni.showToast({ title: '已加入', icon: 'success' })
+        inviteCodeInput.value = ''
+        loadDetail()
+      })
+      .catch(() => {})
+    return
+  }
+  groupApi
+    .join(groupId.value)
+    .then(() => {
+      uni.showToast({ title: '已加入', icon: 'success' })
+      loadDetail()
+    })
+    .catch(() => {})
+}
+
+function confirmLeave() {
+  if (!groupId.value) return
+  uni.showModal({
+    title: '退出小组',
+    content: '确定要退出该小组吗？',
+    success(res) {
+      if (!res.confirm) return
+      groupApi
+        .leave(groupId.value)
+        .then(() => {
+          uni.showToast({ title: '已退出', icon: 'success' })
+          loadDetail()
+        })
+        .catch(() => {})
+    },
+  })
 }
 
 function shareGroup() {
   uni.showToast({ title: '请使用右上角菜单分享', icon: 'none' })
 }
 
-/** 蓝图：全局打卡入口与首页一致，跳转统一打卡页 */
+// 去打卡
 function goCheckin() {
   uni.navigateTo({ url: '/pages/checkin/checkin' })
+}
+
+function navToGroupCheckin() {
+  uni.navigateTo({ url: `/pages/group-checkin-detail/group-checkin-detail?id=${groupId.value}` })
 }
 
 function goPost() {
@@ -247,9 +443,18 @@ function goPost() {
 
 .toolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 16rpx;
   margin-bottom: 16rpx;
+  flex-wrap: wrap;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
 }
 
 .tool-btn {
@@ -266,6 +471,12 @@ function goPost() {
 
 .tool-btn.primary {
   background: $color-primary;
+}
+
+.tool-btn.ghost {
+  background: #fff;
+  color: $color-text-sub;
+  border: 1rpx solid #ddd;
 }
 
 .group-info-section {
@@ -322,6 +533,13 @@ function goPost() {
   margin-bottom: 12rpx;
 }
 
+.group-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+
 .group-status-pill {
   display: inline-block;
   font-size: 24rpx;
@@ -331,8 +549,82 @@ function goPost() {
   color: #fff;
 }
 
+.group-status-pill.private {
+  background: #8e44ad;
+}
+
 .group-status-pill.ok {
   background: $color-primary;
+}
+
+.invite-code-banner {
+  background: $color-bg;
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.invite-code-label {
+  font-size: 24rpx;
+  color: $color-text-sub;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.invite-code-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.invite-code-text {
+  font-size: 34rpx;
+  font-weight: 700;
+  letter-spacing: 4rpx;
+  color: $color-text;
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+}
+
+.invite-copy-btn {
+  flex-shrink: 0;
+  background: $color-primary;
+  color: #fff;
+  font-size: 24rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 24rpx;
+  border: none;
+}
+
+.invite-code-hint {
+  font-size: 22rpx;
+  color: $color-text-sub;
+  margin-top: 12rpx;
+  display: block;
+  line-height: 1.4;
+}
+
+.join-invite-block {
+  margin-bottom: 24rpx;
+}
+
+.join-invite-label {
+  font-size: 26rpx;
+  color: $color-text-sub;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.join-invite-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 88rpx;
+  padding: 20rpx 28rpx;
+  border: 1rpx solid #ddd;
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  background: #fff;
 }
 
 .group-description {
@@ -379,6 +671,15 @@ function goPost() {
   border-radius: 16rpx;
   font-size: 30rpx;
   font-weight: 600;
+}
+
+.checkin-hint {
+  width: 100%;
+  text-align: center;
+  font-size: 26rpx;
+  color: $color-text-sub;
+  padding: 20rpx 16rpx;
+  line-height: 1.5;
 }
 
 .members-section,
@@ -447,6 +748,12 @@ function goPost() {
   font-size: 28rpx;
   margin: 0 auto 12rpx;
   position: relative;
+  overflow: hidden;
+}
+
+.member-avatar-img {
+  width: 100%;
+  height: 100%;
 }
 
 .member-name {
@@ -483,6 +790,29 @@ function goPost() {
   color: #fff;
   font-size: 28rpx;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.activity-avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.activity-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.post-type-tag {
+  font-size: 20rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 8rpx;
+  background: $color-bg;
+  color: $color-primary;
+  flex-shrink: 0;
 }
 
 .activity-content {
@@ -515,5 +845,19 @@ function goPost() {
   line-height: 1.5;
   display: block;
   word-break: break-all;
+}
+
+.activity-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.activity-thumb {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 12rpx;
+  background: $color-bg;
 }
 </style>

@@ -21,3 +21,27 @@ $card-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.05);
   border-color: $color-primary !important;
   box-shadow: 0 0 0 6rpx rgba(26, 188, 156, 0.2);
 }
+
+/** 表单长页：用普通 view + 纵向滚动，避免 H5 端 scroll-view 嵌套 input/textarea 无法聚焦 */
+@mixin form-page-scroll {
+  height: 100vh;
+  max-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+/** 输入框基础：≥32rpx 避免 iOS 聚焦时整页缩放；清除系统默认圆角（移动端变形） */
+@mixin form-control-base {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 32rpx;
+  line-height: 1.5;
+  color: $color-text;
+  background: #fff;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
